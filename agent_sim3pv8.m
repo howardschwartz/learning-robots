@@ -674,7 +674,7 @@ sigma_success_plot(j) = sigma_success;
     %sprintf(' The up2et1 is %f ', up2et1)
     %sprintf(' The up2_des is %f ', up2_des)
     %sprintf(' The up2 is %f ', up2)
-    if(abs(capture1))
+    if(abs(capture1) < 1)
         capture_cond1 = 1;
     else
         capture_cond1 = 0;
