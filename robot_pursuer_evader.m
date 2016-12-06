@@ -1,4 +1,4 @@
-function [output_data] = robot_pursuer_evader(robot_init)
+function [robot, no_of_robots] = robot_pursuer_evader()
    % Simulation of the multi-Robot pursuer evader machine learning game
    % Started by Prof. Schwartz Oct. 30, 2016
    % Define globsl variables 
@@ -11,9 +11,42 @@ function [output_data] = robot_pursuer_evader(robot_init)
    global vp3; % pursuer 3 speed
    global ve;  % evader speed
    %
+   % Read in the robot data
+   %
+   fid = fopen('robot.txt');
+   no_of_data = [19, inf];
+   robot_data = fscanf(fid, '%f', no_of_data);
+   robot_data = robot_data';
+   [m, n] = size(robot_data);
+   no_of_robots = m;
+   for i = 1:no_of_robots
+       robot_init(i).type = robot_data(i, 1);
+       robot_init(i).x = robot_data(i, 2);
+       robot_init(i).y = robot_data(i, 3);
+       robot_init(i).speed = robot_data(i, 4);
+       robot_init(i).heading = robot_data(i, 5);
+       robot_init(i).critic.no_of_inputs = robot_data(i, 6);
+       no_of_inputs = robot_data(i, 6);
+       k = 6;
+       for j = 1:no_of_inputs
+          robot_init(i).critic.mf_per_input(j).no_of_mf = robot_data(i, k+1);
+          robot_init(i).critic.mf_per_input(j).range(1,1) = robot_data(i, k+2);
+          robot_init(i).critic.mf_per_input(j).range(1,2) = robot_data(i, k+3);
+          k = k + 3;
+       end
+       robot_init(i).actor.no_of_inputs = robot_data(i, k+1);
+       no_of_inputs = robot_data(i, k+1);
+       k = k+1;
+       for j = 1:no_of_inputs
+          robot_init(i).actor.mf_per_input(j).no_of_mf = robot_data(i, k+1);
+          robot_init(i).actor.mf_per_input(j).range(1,1) = robot_data(i, k+2);
+          robot_init(i).actor.mf_per_input(j).range(1,2) = robot_data(i, k+3);
+          k = k + 3;
+       end
+   end 
    % Initialize the robot structure
    %
-   [robot, no_of_robots] = init_robots(robot_init);
+   [robot] = init_robots(robot_init, no_of_robots)
    %
    % Initialize the counters
    %
@@ -25,7 +58,7 @@ function [output_data] = robot_pursuer_evader(robot_init)
 %
 % Compute the capture condition between each robot
 %
-   for i=1:no_of_robots
+   for i = 1:no_of_robots
        for j = 1:no_of_robots
            [condition, alpha, up_des, delup] = capture_condition(robot(i), robot(j));
            robot(i).capture(j).condition = condition;
