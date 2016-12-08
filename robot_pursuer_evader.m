@@ -81,7 +81,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
   % sigma_success = sigma;
   % capture_cond2_old = 0;
   %
-  game_no = 500;
+  game_no = 1;
   count_success = 150;
   sigma_plot = zeros(1,game_no);
   sigma_success_plot = zeros(1, game_no);
@@ -107,6 +107,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
     %sigma_plot(j) = sigma;
     %sigma_success_plot(j) = sigma_success;
     game_on = 1; %start the game
+    dt = 0.1; % sampling time in seconds
    % *******************************************************************
    % 3rd change
    %
@@ -120,6 +121,10 @@ function [robot, no_of_robots] = robot_pursuer_evader()
    grid on % turn on the grid lines
    % *******************************************************************
       while(game_on == 1)
+          [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt )
+          inputs = [
+          [heading] = compute_robot_action( robot, inputs )
+          game_on = 0;
       end
   end
    
