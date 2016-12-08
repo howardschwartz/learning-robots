@@ -67,6 +67,61 @@ function [robot, no_of_robots] = robot_pursuer_evader()
            robot(i).capture(j).del_heading = delup;
        end
    end
+   %
+   % Initialize parameters associated with success
+   %
+  % psil2_success = psil2;
+   %wl2_success = wl2;
+  % psil2_success_init = psil2;
+  % wl2_success_init = wl2;
+  % psil2_init = psil2;
+  % wl2_init = wl2;
+   %alpha_success = alpha;
+  % beta_success = beta;
+  % sigma_success = sigma;
+  % capture_cond2_old = 0;
+  %
+  game_no = 500;
+  count_success = 150;
+  sigma_plot = zeros(1,game_no);
+  sigma_success_plot = zeros(1, game_no);
+  %
+  % % start here %
+  % ***************************************************************
+  for j=1:game_no
+    %
+    % Initialize pursuer and evader positions velocity and heading
+    %
+    for i=1:no_of_robots
+      robot(i).x =  robot_init(i).x;
+      robot(i).y =  robot_init(i).y;
+      robot(i).speed =  robot_init(i).speed; % Start from not moving
+      robot(i).heading = robot_init(i).heading;   % start with zero heading
+    end
+    %
+    % Initialize some conditions
+    %
+    %capture_fail = 0;
+    %psil2_init = psil2;
+    %wl2_init = wl2;
+    %sigma_plot(j) = sigma;
+    %sigma_success_plot(j) = sigma_success;
+    game_on = 1; %start the game
+   % *******************************************************************
+   % 3rd change
+   %
+   % Initialize the figure that we make use of to plot the trajectories
+   % of the agents.
+   % *******************************************************************
+   close all % Close all open figures
+   gamePlot = figure('visible','off'); % Create new figure but don't display it
+   axis([-10 25 -10 25]) % set the axis of the figure
+   hold on % ensure continuos plot on the same figure
+   grid on % turn on the grid lines
+   % *******************************************************************
+      while(game_on == 1)
+      end
+  end
    
 end
 

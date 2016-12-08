@@ -11,8 +11,8 @@ function [capture, alpha, up_des, delup] = capture_condition(robot1, robot2)
       %
       dx = robot2.x - robot1.x;
       dy = robot2.y - robot1.y;
-      upe = atan2(dx, dy); % LOS from pursuer  to evader.
-      uep = atan2(-dx, -dy);
+      upe = atan2(dy, dx); % LOS from pursuer  to evader.
+      uep = atan2(-dy, -dx);
       sprintf(' The los of pursuer to evader is %f ', upe)
       sprintf(' The los of evader to pursuer is %f ', uep)
       beta = uep - robot2.heading;
@@ -21,7 +21,9 @@ function [capture, alpha, up_des, delup] = capture_condition(robot1, robot2)
       sprintf(' The beta value is %f ', beta)
       if ( abs(capture) < 1 && abs(beta) < pi/2) 
         alpha = asin(capture);
+        sprintf(' The alpha value is %f ', alpha)
         up_des = upe + alpha;
+        sprintf(' The desired heading value is %f ', up_des)
         delup = up_des - robot1.heading;
         capture = 1;
         sprintf(' The capture condition is true ')
