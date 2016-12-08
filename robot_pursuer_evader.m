@@ -122,10 +122,17 @@ function [robot, no_of_robots] = robot_pursuer_evader()
    % *******************************************************************
       while(game_on == 1)
           [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt )
-          inputs = [
-          [heading] = compute_robot_action( robot, inputs )
+          for i=1:no_of_robots
+             for k=1:no_of_robots
+                if (robot(i).type == 1 && robot(k).type == 2)
+                    robot(i).rel_pos.x
+                  % inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y]
+                  % [heading] = compute_robot_action( robot(i), inputs )
+                end
+             end
+          end
           game_on = 0;
-      end
+      end %% ****  END the While Loop of Epoch ****%
   end
    
 end
