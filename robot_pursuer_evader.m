@@ -125,9 +125,32 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           for i=1:no_of_robots
              for k=1:no_of_robots
                 if (robot(i).type == 1 && robot(k).type == 2)
-                    robot(i).rel_pos.x
-                  % inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y]
-                  % [heading] = compute_robot_action( robot(i), inputs )
+                    inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y];
+                    [action] = compute_robot_action( robot(i), inputs );
+                    [value, phi_norm] = compute_robot_state_value(robot(i), inputs);
+                    robot(i).value = value
+                    robot(i).heading = action;
+                end
+             end
+          end
+          %
+          % Remeber the state before we take an action
+          %
+          robot_old = robot;
+          %
+          % Lets move the robots one step
+          %
+          [robot] = move_robots(robot, no_of_robots);
+          %
+          % Recompute the relative distances and the new value
+          %
+          [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt )
+          for i=1:no_of_robots
+             for k=1:no_of_robots
+                if (robot(i).type == 1 && robot(k).type == 2)
+                    inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y];
+                    [value, phi_norm] = compute_robot_state_value(robot(i), inputs);
+                    robot(i).value = value
                 end
              end
           end

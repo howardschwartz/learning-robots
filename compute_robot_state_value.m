@@ -3,10 +3,10 @@ function [value, phi_norm] = compute_robot_state_value( robot, input )
 % Computes the value of the state
 %
     no_of_rules = robot.no_of_rules_critic;
-    rule.mf = robot.rule_critic
+    rule = robot.rule_critic
     phi = zeros(1, no_of_rules); 
     for i=1:no_of_rules
-        phi(i) = fire_strength_for_rule(input, rule.mf);
+        phi(i) = fire_strength_for_rule(input, rule(i).mf);
     end
     %
     % Compute the normalized firing strength for each rule.

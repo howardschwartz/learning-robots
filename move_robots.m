@@ -1,4 +1,4 @@
-function [status] = move_robots(robot, no_of_robots)
+function [robot] = move_robots(robot, no_of_robots)
 %  move_robots(robot, no_of_robots)
 %  uses ode45 to simulate the robtos based on their specific dynamics.
 %
@@ -13,7 +13,6 @@ function [status] = move_robots(robot, no_of_robots)
        y = yout(3, :);
        robot(i).x = y(1);
        robot(i).y = y(2);
-   end
-   status = 1;       
+   end       
 end
 
