@@ -114,43 +114,52 @@ function [robot, no_of_robots] = robot_pursuer_evader()
    % Initialize the figure that we make use of to plot the trajectories
    % of the agents.
    % *******************************************************************
-   close all % Close all open figures
-   gamePlot = figure('visible','off'); % Create new figure but don't display it
-   axis([-10 25 -10 25]) % set the axis of the figure
-   hold on % ensure continuos plot on the same figure
-   grid on % turn on the grid lines
+   %close all % Close all open figures
+   %gamePlot = figure('visible','off'); % Create new figure but don't display it
+   %axis([-10 25 -10 25]) % set the axis of the figure
+   %hold on % ensure continuos plot on the same figure
+   %grid on % turn on the grid lines
    % *******************************************************************
       while(game_on == 1)
-          [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt )
+          [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt );
           for i=1:no_of_robots
              for k=1:no_of_robots
                 if (robot(i).type == 1 && robot(k).type == 2)
                     inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y];
                     [action] = compute_robot_action( robot(i), inputs );
                     [value, phi_norm] = compute_robot_state_value(robot(i), inputs);
-                    robot(i).value = value
+                    robot(i).value_old = value;
                     robot(i).heading = action;
+                    robot(i).phi_norm_critic = phi_norm;
+                    robot(i).phi_norm_actor = phi_norm;
+                    sprintf(' Compute phi_norm robot(%d)', i)
                 end
              end
           end
           %
-          % Remeber the state before we take an action
-          %
-          robot_old = robot;
-          %
           % Lets move the robots one step
+          % Compute the exploration noise for each robot
+          for i=1:no_of_robots
+              if (robot(i).type == 1) % Only pursuers learning
+                  robot(i).noise = normrnd(0,robot(i).sigma);
+              end
+          end
           %
           [robot] = move_robots(robot, no_of_robots);
           %
           % Recompute the relative distances and the new value
           %
-          [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt )
+          [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt );
           for i=1:no_of_robots
              for k=1:no_of_robots
                 if (robot(i).type == 1 && robot(k).type == 2)
                     inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y];
                     [value, phi_norm] = compute_robot_state_value(robot(i), inputs);
-                    robot(i).value = value
+                    robot(i).value = value;
+                    [psi] = compute_critic_update( robot, no_of_robots);
+                    [w] = compute_actor_update(robot, no_of_robots);
+                    robot(i).w = w;
+                    robot(i).psi = psi;
                 end
              end
           end

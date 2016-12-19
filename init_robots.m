@@ -45,6 +45,8 @@ function [robot] = init_robots(robot_init, no_of_robots)
       robot(i).reward_line_of_sight = 0;
       robot(i).gamma_line_of_sight = 0;
       robot(i).value = 0;
+      robot(i).value_old = 0;
+      robot(i).noise = 0;
       robot(i).dynamics = @pedestrian;
    end
 end

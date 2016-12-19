@@ -6,8 +6,8 @@ function [psi] = compute_critic_update( robot, no_of_robots)
        reward = robot(i).reward_capture_heading;
        gamma = robot(i).gamma_capture_heading;
        alpha = robot(i).alpha;
-       value = robot(i).value_capture_heading;
-       value_old = robot(i).value_old_capture_heading;
+       value = robot(i).value;
+       value_old = robot(i).value_old;
        psi = robot(i).psi;
        phi_norm =robot(i).phi_norm_critic;
        no_of_rules = robot(i).no_of_rules_critic;
@@ -16,7 +16,6 @@ function [psi] = compute_critic_update( robot, no_of_robots)
            psi(j) = psi(j)+ alpha*td*phi_norm(j);
            %sprintf(' Value psi(%d) is %f', j, psi(j))
        end
-       robot(i).psi = psi;
    end
 end
 
