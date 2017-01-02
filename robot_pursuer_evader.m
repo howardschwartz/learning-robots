@@ -115,10 +115,10 @@ function [robot, no_of_robots] = robot_pursuer_evader()
    % of the agents.
    % *******************************************************************
    %close all % Close all open figures
-   %gamePlot = figure('visible','off'); % Create new figure but don't display it
-   %axis([-10 25 -10 25]) % set the axis of the figure
-   %hold on % ensure continuos plot on the same figure
-   %grid on % turn on the grid lines
+   gamePlot = figure('visible','off'); % Create new figure but don't display it
+   axis([-10 25 -10 25]) % set the axis of the figure
+   hold on % ensure continuos plot on the same figure
+   grid on % turn on the grid lines
    % *******************************************************************
       while(game_on == 1)
           [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt );
@@ -147,6 +147,21 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           %
           [robot] = move_robots(robot, no_of_robots);
           %
+          % Recompute the capture conditions
+          %
+          for i = 1:no_of_robots
+             for j = 1:no_of_robots
+                [condition, alpha, up_des, delup] = capture_condition(robot(i), robot(j));
+                %
+                % Check if the capture condition changed
+                %To do Next
+                robot(i).capture(j).condition = condition;
+                robot(i).capture(j).alpha = alpha;
+                robot(i).capture(j).des_heading = up_des;
+                robot(i).capture(j).del_heading = delup;
+             end
+          end
+          %
           % Recompute the relative distances and the new value
           %
           [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt );
@@ -164,6 +179,49 @@ function [robot, no_of_robots] = robot_pursuer_evader()
              end
           end
           game_on = 0;
+          %
+          % Plotting code
+          %
+           % ****************************************************************
+    % 3rd change (contd.)
+    %
+    % Update the current figure with the new location of the players
+    % The if statement "if mod(iteration_count,10) == 0" will plot the
+    % trajectory of the players after every 10 iterations. This is done to
+    % improve the visualization of the plot.
+    % ****************************************************************
+    if  mod(count,10) == 1
+        plot(ya(1), ya(2), '*m', ya(3), ya(4), '*r', ya(5), ya(6), '*m', ya(7), ya(8), 'dk', 'MarkerFaceColor', 'k' )
+        % uncomment this line to get real time visualization of the
+        % players trajectory. (Warning: May slow down your system.)
+        % pause(0.0000001);
+    end
+    % ****************************************************************
+   end
+   %td_plot(j) = td;
+   % *******************************************************************
+   % 3rd change (contd.)
+   %
+   % Create a new folder to save all the game plots
+   % *******************************************************************
+   if j == 1 % Check if this a new simulation
+       date_and_time = datestr(clock,0); % obtain the current system time
+       folderName = strcat('Simulation_results_', date_and_time); % define the name of the folder
+       folderName = strrep(folderName, ' ', '_');  % replace all ' ' with '_'
+       folderName = strrep(folderName, ':', '_');  % replace all ':' with '_'
+       folderName = strrep(folderName, '-', '_');  % replace all '-' with '_'
+       mkdir(folderName) % create new folder
+   end
+   % *******************************************************************
+   % *******************************************************************
+   % 3rd change (contd.)
+   %
+   % Save the game plots in the new folder
+   % *******************************************************************
+   if  mod(j,100) == 0
+      fileName = sprintf('Epoch_%d.jpg', j); % define the file name
+      saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
+   end
       end %% ****  END the While Loop of Epoch ****%
   end
    
