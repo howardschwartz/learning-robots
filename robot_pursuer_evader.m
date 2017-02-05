@@ -1,15 +1,6 @@
 function [robot, no_of_robots] = robot_pursuer_evader()
    % Simulation of the multi-Robot pursuer evader machine learning game
    % Started by Prof. Schwartz Oct. 30, 2016
-   % Define globsl variables 
-   global up1; % Heading angle pursuer 1
-   global up2; % Heading angle pursuer 2
-   global up3; % Heading angle of pursuer 3
-   global ue;  % heading angle evader
-   global vp1; % pursuer 1 speed
-   global vp2; % pursuer 2 speed
-   global vp3; % pursuer 3 speed
-   global ve;  % evader speed
    %
    % Read in the robot data
    %
@@ -51,13 +42,9 @@ function [robot, no_of_robots] = robot_pursuer_evader()
    % Initialize the counters
    %
    count = 0;
-   count2= 0;
-   count3 = 0;
-   countm = 0;
-   count_success_times = 0;
-%
-% Compute the capture condition between each robot
-%
+   %
+   % Compute the capture condition between each robot
+   %
    for i = 1:no_of_robots
        for j = 1:no_of_robots
            [condition, alpha, up_des, delup] = capture_condition(robot(i), robot(j));
@@ -67,24 +54,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
            robot(i).capture(j).del_heading = delup;
        end
    end
-   %
-   % Initialize parameters associated with success
-   %
-  % psil2_success = psil2;
-   %wl2_success = wl2;
-  % psil2_success_init = psil2;
-  % wl2_success_init = wl2;
-  % psil2_init = psil2;
-  % wl2_init = wl2;
-   %alpha_success = alpha;
-  % beta_success = beta;
-  % sigma_success = sigma;
-  % capture_cond2_old = 0;
-  %
-  game_no = 1;
-  count_success = 150;
-  sigma_plot = zeros(1,game_no);
-  sigma_success_plot = zeros(1, game_no);
+  game_no = 100;
   %
   % % start here %
   % ***************************************************************
@@ -97,6 +67,13 @@ function [robot, no_of_robots] = robot_pursuer_evader()
       robot(i).y =  robot_init(i).y;
       robot(i).speed =  robot_init(i).speed; % Start from not moving
       robot(i).heading = robot_init(i).heading;   % start with zero heading
+      %Start here to init capture conditions psi_init and w_init
+      for k=1:no_of_robots
+           if (robot(i).type == 1 && robot(k).type == 2)
+               robot(i).capture(k).psi_init = robot(i).psi;
+               robot(i).capture(k).w_init = robot(i).w;
+           end
+      end   
     end
     %
     % Initialize some conditions
@@ -108,19 +85,16 @@ function [robot, no_of_robots] = robot_pursuer_evader()
     %sigma_success_plot(j) = sigma_success;
     game_on = 1; %start the game
     dt = 0.1; % sampling time in seconds
-   % *******************************************************************
-   % 3rd change
-   %
-   % Initialize the figure that we make use of to plot the trajectories
-   % of the agents.
-   % *******************************************************************
-   %close all % Close all open figures
-   gamePlot = figure('visible','off'); % Create new figure but don't display it
-   axis([-10 25 -10 25]) % set the axis of the figure
-   hold on % ensure continuos plot on the same figure
-   grid on % turn on the grid lines
-   % *******************************************************************
-      while(game_on == 1)
+    %
+    % Initialize the figure that we make use of to plot the trajectories
+    %close all % Close all open figures
+    gamePlot = figure('visible','off'); % Create new figure but don't display it
+    axis([-10 25 -10 25]) % set the axis of the figure
+    hold on % ensure continuos plot on the same figure
+    grid on % turn on the grid lines
+    % *******************************************************************
+    % *******************************************************************
+    while(game_on == 1)
           [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt );
           for i=1:no_of_robots
              for k=1:no_of_robots
@@ -150,15 +124,25 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           % Recompute the capture conditions
           %
           for i = 1:no_of_robots
-             for j = 1:no_of_robots
-                [condition, alpha, up_des, delup] = capture_condition(robot(i), robot(j));
+             for k = 1:no_of_robots
+                [condition, alpha, up_des, delup] = capture_condition(robot(i), robot(k));
                 %
                 % Check if the capture condition changed
-                %To do Next
-                robot(i).capture(j).condition = condition;
-                robot(i).capture(j).alpha = alpha;
-                robot(i).capture(j).des_heading = up_des;
-                robot(i).capture(j).del_heading = delup;
+                % Check if condition has changed
+                %
+                if (robot(i).capture(k).condition == 1 && condition == 0)
+                    robot(i).capture(k).condition_change_to_fail = 1;
+                    robot(i).capture(k).condition = 0;
+                    [psi, w, sigma] = change_capture_condition(robot(i).capture(k));
+                    robot(i).psi = psi;
+                    robot(i).w = w;
+                    robot(i).sigma = sigma;
+                    game_on = 0; % End the game
+                end
+                robot(i).capture(k).condition = condition;
+                robot(i).capture(k).alpha = alpha;
+                robot(i).capture(k).des_heading = up_des;
+                robot(i).capture(k).del_heading = delup;
              end
           end
           %
@@ -178,52 +162,57 @@ function [robot, no_of_robots] = robot_pursuer_evader()
                 end
              end
           end
-          game_on = 0;
-          %
-          % Plotting code
-          %
-           % ****************************************************************
-    % 3rd change (contd.)
+          %************************************************************
+          for i=1:no_of_robots
+             for k=1:no_of_robots
+                 if (robot(i).type == 1 && robot(k).type == 2)
+                    dist = sqrt((robot(i).rel_pos(k).x)^2 + (robot(i).rel_pos(k).y)^2);
+                    if(dist < 0.5) % We have successfully captured.
+                       game_on = 0; %Captured
+                       [robot(i).capture(k), psi, w, alpha, beta, sigma] = robot_captured(robot(i).capture(k), robot(i).psi, robot(i).w, count);
+                       robot(i).psi = psi;
+                       robot(i).w = w;
+                       robot(i).alpha = alpha;
+                       robot(i).beta = beta;
+                       robot(i).sigma = sigma;
+                    end
+                 end
+             end
+          end
+          if( count > 150) % stop the game
+             game_on = 0;
+          end
+          % Update the current figure with the new location of the players
+          % The if statement "if mod(iteration_count,10) == 0" will plot the
+          % trajectory of the players after every 10 iterations. This is done to
+          % improve the visualization of the plot.
+          % ****************************************************************
+          if  mod(count,10) == 1
+             plot(ya(1), ya(2), '*m', ya(3), ya(4), '*r', ya(5), ya(6), '*m', ya(7), ya(8), 'dk', 'MarkerFaceColor', 'k' )
+             % uncomment this line to get real time visualization of the
+             % players trajectory. (Warning: May slow down your system.)
+             % pause(0.0000001);
+          end
+          % ****************************************************************
+    end %% ****  END the While Loop of Epoch ****%
     %
-    % Update the current figure with the new location of the players
-    % The if statement "if mod(iteration_count,10) == 0" will plot the
-    % trajectory of the players after every 10 iterations. This is done to
-    % improve the visualization of the plot.
-    % ****************************************************************
-    if  mod(count,10) == 1
-        plot(ya(1), ya(2), '*m', ya(3), ya(4), '*r', ya(5), ya(6), '*m', ya(7), ya(8), 'dk', 'MarkerFaceColor', 'k' )
-        % uncomment this line to get real time visualization of the
-        % players trajectory. (Warning: May slow down your system.)
-        % pause(0.0000001);
-    end
-    % ****************************************************************
-   end
-   %td_plot(j) = td;
-   % *******************************************************************
-   % 3rd change (contd.)
-   %
-   % Create a new folder to save all the game plots
-   % *******************************************************************
-   if j == 1 % Check if this a new simulation
+    % Create a new folder to save all the game plots
+    % *******************************************************************
+    if j == 1 % Check if this a new simulation
        date_and_time = datestr(clock,0); % obtain the current system time
        folderName = strcat('Simulation_results_', date_and_time); % define the name of the folder
        folderName = strrep(folderName, ' ', '_');  % replace all ' ' with '_'
        folderName = strrep(folderName, ':', '_');  % replace all ':' with '_'
        folderName = strrep(folderName, '-', '_');  % replace all '-' with '_'
        mkdir(folderName) % create new folder
-   end
-   % *******************************************************************
-   % *******************************************************************
-   % 3rd change (contd.)
-   %
-   % Save the game plots in the new folder
-   % *******************************************************************
-   if  mod(j,100) == 0
+    end
+    %
+    % Save the game plots in the new folder
+    % *******************************************************************
+    if  mod(j,100) == 0
       fileName = sprintf('Epoch_%d.jpg', j); % define the file name
       saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
-   end
-      end %% ****  END the While Loop of Epoch ****%
-  end
-   
+   end 
+  end 
 end
 
