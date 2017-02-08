@@ -196,6 +196,19 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           % ****************************************************************
     end %% ****  END the While Loop of Epoch ****%
     %
+     for i=1:no_of_robots
+             for k=1:no_of_robots
+                 if (robot(i).type == 1 && robot(k).type == 2)
+                     robot(i).alpha = 0.9999*robot(i).alpha;
+                     robot(i).beta = 0.9999*robot(i).beta;
+                     robot(i).sigma = 0.999*robot(i).sigma;
+                     robot(i).capture(k).alpha = 0.9999*robot(i).capture(k).alpha;
+                     robot(i).capture(k).beta = 0.9999*robot(i).capture(k).beta;
+                     robot(i).capture(k).sigma = 0.999*robot(i).capture(k).sigma;
+                 end
+             end
+     end
+                     
     % Create a new folder to save all the game plots
     % *******************************************************************
     if j == 1 % Check if this a new simulation

@@ -2,6 +2,7 @@ function [capture, psi, w, alpha, beta, sigma] = robot_captured(captured, psi, w
 % [capture] = robot_captured(captured)
 % This functions sets the parametrs for the captured robots
 %
+   capture = captured;
    if (count < captured.count_success)
        capture.count_success = count;
        %remember the parameters for success!
@@ -27,8 +28,8 @@ function [capture, psi, w, alpha, beta, sigma] = robot_captured(captured, psi, w
    %remember the parameters for success!
    psi = capture.psi_success;
    w = capture.w_success;
-   alpha = alpha_success;
-   beta = beta_success;
-   sigma = sigma_success;
+   alpha = capture.alpha_success;
+   beta = capture.beta_success;
+   sigma = capture.sigma_success;
 end
 
