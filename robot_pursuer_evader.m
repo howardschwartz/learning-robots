@@ -37,7 +37,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
    end 
    % Initialize the robot structure
    %
-   [robot] = init_robots(robot_init, no_of_robots)
+   [robot] = init_robots(robot_init, no_of_robots);
    %
    % Initialize the counters
    %
@@ -47,14 +47,13 @@ function [robot, no_of_robots] = robot_pursuer_evader()
    %
    for i = 1:no_of_robots
        for j = 1:no_of_robots
-           [condition, alpha, up_des, delup] = capture_condition(robot(i), robot(j));
+           [condition, up_des, delup] = capture_condition(robot(i), robot(j));
            robot(i).capture(j).condition = condition;
-           robot(i).capture(j).alpha = alpha;
            robot(i).capture(j).des_heading = up_des;
            robot(i).capture(j).del_heading = delup;
        end
    end
-  game_no = 100;
+  game_no = 200;
   %
   % % start here %
   % ***************************************************************
@@ -78,11 +77,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
     %
     % Initialize some conditions
     %
-    %capture_fail = 0;
-    %psil2_init = psil2;
-    %wl2_init = wl2;
-    %sigma_plot(j) = sigma;
-    %sigma_success_plot(j) = sigma_success;
+    count = 0;
     game_on = 1; %start the game
     dt = 0.1; % sampling time in seconds
     %
@@ -95,6 +90,8 @@ function [robot, no_of_robots] = robot_pursuer_evader()
     % *******************************************************************
     % *******************************************************************
     while(game_on == 1)
+          count = count + 1;
+          %sprintf(' The count is %d the game number is %d ', count, j)
           [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt );
           for i=1:no_of_robots
              for k=1:no_of_robots
@@ -106,7 +103,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
                     robot(i).heading = action;
                     robot(i).phi_norm_critic = phi_norm;
                     robot(i).phi_norm_actor = phi_norm;
-                    sprintf(' Compute phi_norm robot(%d)', i)
+                    %sprintf(' Compute phi_norm robot(%d)', i)
                 end
              end
           end
@@ -125,12 +122,13 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           %
           for i = 1:no_of_robots
              for k = 1:no_of_robots
-                [condition, alpha, up_des, delup] = capture_condition(robot(i), robot(k));
+                [condition, up_des, delup] = capture_condition(robot(i), robot(k));
                 %
                 % Check if the capture condition changed
                 % Check if condition has changed
                 %
                 if (robot(i).capture(k).condition == 1 && condition == 0)
+                    sprintf(' The pursuer can no longer capture, the count is %d and the epoch is %d ', count, j)
                     robot(i).capture(k).condition_change_to_fail = 1;
                     robot(i).capture(k).condition = 0;
                     [psi, w, sigma] = change_capture_condition(robot(i).capture(k));
@@ -140,25 +138,32 @@ function [robot, no_of_robots] = robot_pursuer_evader()
                     game_on = 0; % End the game
                 end
                 robot(i).capture(k).condition = condition;
-                robot(i).capture(k).alpha = alpha;
                 robot(i).capture(k).des_heading = up_des;
                 robot(i).capture(k).del_heading = delup;
+                robot(i).reward_capture_heading = 2*exp(-delup^2) - 1;
              end
           end
           %
           % Recompute the relative distances and the new value
           %
           [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los(robot, no_of_robots, dt );
+          % 
+          % 
           for i=1:no_of_robots
              for k=1:no_of_robots
                 if (robot(i).type == 1 && robot(k).type == 2)
                     inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y];
                     [value, phi_norm] = compute_robot_state_value(robot(i), inputs);
+                    robot(i).phi_norm_critic = phi_norm;
+                    robot(i).phi_norm_actor = phi_norm;
+                    robot(i).value_old = robot(i).value;
                     robot(i).value = value;
                     [psi] = compute_critic_update( robot, no_of_robots);
                     [w] = compute_actor_update(robot, no_of_robots);
                     robot(i).w = w;
                     robot(i).psi = psi;
+                    robot(i).capture(k).w = w;
+                    robot(i).capture(k).psi = psi;
                 end
              end
           end
@@ -166,10 +171,15 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           for i=1:no_of_robots
              for k=1:no_of_robots
                  if (robot(i).type == 1 && robot(k).type == 2)
+                    %sprintf(' The relative position is x(%d, %d) = %f and y = %f', i, k, robot(i).rel_pos(k).x, robot(i).rel_pos(k).y)
                     dist = sqrt((robot(i).rel_pos(k).x)^2 + (robot(i).rel_pos(k).y)^2);
                     if(dist < 0.5) % We have successfully captured.
+                       sprintf(' The distance is %f and count is %d and the epoch is %d', dist, count, j)
                        game_on = 0; %Captured
-                       [robot(i).capture(k), psi, w, alpha, beta, sigma] = robot_captured(robot(i).capture(k), robot(i).psi, robot(i).w, count);
+                       [capture, psi, w, alpha, beta, sigma] = robot_captured(robot(i).capture(k), robot(i).psi, robot(i).w, count);
+                       robot(i).capture(k)
+                       capture
+                       robot(i).capture(k) = capture;
                        robot(i).psi = psi;
                        robot(i).w = w;
                        robot(i).alpha = alpha;
@@ -188,7 +198,8 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           % improve the visualization of the plot.
           % ****************************************************************
           if  mod(count,10) == 1
-             plot(ya(1), ya(2), '*m', ya(3), ya(4), '*r', ya(5), ya(6), '*m', ya(7), ya(8), 'dk', 'MarkerFaceColor', 'k' )
+             plot(robot(1).x, robot(1).y, '*m', robot(2).x, robot(2).y, '*r', robot(3).x, robot(3).y, '*m', robot(4).x, robot(4).y, 'dk', 'MarkerFaceColor', 'k' )
+             %plot(ya(1), ya(2), '*m', ya(3), ya(4), '*r', ya(5), ya(6), '*m', ya(7), ya(8), 'dk', 'MarkerFaceColor', 'k' )
              % uncomment this line to get real time visualization of the
              % players trajectory. (Warning: May slow down your system.)
              % pause(0.0000001);
@@ -226,6 +237,14 @@ function [robot, no_of_robots] = robot_pursuer_evader()
       fileName = sprintf('Epoch_%d.jpg', j); % define the file name
       saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
    end 
-  end 
+  end
+  for i=1:no_of_robots
+             for k=1:no_of_robots
+                 if (robot(i).type == 1 && robot(k).type == 2)
+                       sprintf(' The Game Is Over Print out the final Capture information')
+                       robot(i).capture(k)
+                    end
+                 end
+             end
 end
 
