@@ -53,7 +53,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
            robot(i).capture(j).del_heading = delup;
        end
    end
-  game_no = 200;
+  game_no = 50;
   %
   % % start here %
   % ***************************************************************
