@@ -53,7 +53,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
            robot(i).capture(j).del_heading = delup;
        end
    end
-  game_no = 50;
+  game_no = 200;
   %
   % % start here %
   % ***************************************************************
@@ -122,25 +122,28 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           %
           for i = 1:no_of_robots
              for k = 1:no_of_robots
-                [condition, up_des, delup] = capture_condition(robot(i), robot(k));
-                %
-                % Check if the capture condition changed
-                % Check if condition has changed
-                %
-                if (robot(i).capture(k).condition == 1 && condition == 0)
-                    sprintf(' The pursuer can no longer capture, the count is %d and the epoch is %d ', count, j)
-                    robot(i).capture(k).condition_change_to_fail = 1;
-                    robot(i).capture(k).condition = 0;
-                    [psi, w, sigma] = change_capture_condition(robot(i).capture(k));
-                    robot(i).psi = psi;
-                    robot(i).w = w;
-                    robot(i).sigma = sigma;
-                    game_on = 0; % End the game
-                end
+                if (robot(i).type == 1 && robot(k).type == 2)
+                   [condition, up_des, delup] = capture_condition(robot(i), robot(k));
+                   %
+                   % Check if the capture condition changed
+                   % Check if condition has changed
+                   %
+                   if (robot(i).capture(k).condition == 1 && condition == 0)
+                       sprintf(' The pursuer can no longer capture, the count is %d and the epoch is %d ', count, j)
+                       robot(i).capture(k).condition_change_to_fail = 1;
+                       robot(i).capture(k).condition = 0;
+                       [psi, w, sigma] = change_capture_condition(robot(i).capture(k));
+                       robot(i).psi = psi;
+                       robot(i).w = w;
+                       robot(i).sigma = sigma;
+                       game_on = 0; % End the game
+                   end
                 robot(i).capture(k).condition = condition;
                 robot(i).capture(k).des_heading = up_des;
                 robot(i).capture(k).del_heading = delup;
                 robot(i).reward_capture_heading = 2*exp(-delup^2) - 1;
+                %sprintf(' The reward is %f ', robot(i).reward_capture_heading)
+                end
              end
           end
           %
@@ -158,8 +161,8 @@ function [robot, no_of_robots] = robot_pursuer_evader()
                     robot(i).phi_norm_actor = phi_norm;
                     robot(i).value_old = robot(i).value;
                     robot(i).value = value;
-                    [psi] = compute_critic_update( robot, no_of_robots);
-                    [w] = compute_actor_update(robot, no_of_robots);
+                    [psi] = compute_critic_update(robot(i));
+                    [w] = compute_actor_update(robot(i));
                     robot(i).w = w;
                     robot(i).psi = psi;
                     robot(i).capture(k).w = w;
