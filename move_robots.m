@@ -5,7 +5,7 @@ function [robot] = move_robots(robot, no_of_robots)
    global u; % Heading angle
    global v; % speed
    for i = 1:no_of_robots
-       u = robot(i).heading + robot(i).noise;
+       u = robot(i).heading;
        v = robot(i).speed;
        y(1) = robot(i).x;
        y(2) = robot(i).y;
@@ -13,7 +13,7 @@ function [robot] = move_robots(robot, no_of_robots)
        y = yout(3, :);
        robot(i).x = y(1);
        robot(i).y = y(2);
-       sprintf(' move robot(%d)  %f', i, robot(i).x)
+      % sprintf(' move robot(%d)  %f', i, robot(i).x)
    end       
 end
 

@@ -113,6 +113,8 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           for i=1:no_of_robots
               if (robot(i).type == 1) % Only pursuers learning
                   robot(i).noise = normrnd(0,robot(i).sigma);
+                  %Compute the new heading
+                  robot(i).heading = robot(i).heading + robot(i).noise;
               end
           end
           %
@@ -141,7 +143,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
                 robot(i).capture(k).condition = condition;
                 robot(i).capture(k).des_heading = up_des;
                 robot(i).capture(k).del_heading = delup;
-                robot(i).reward_capture_heading = 2*exp(-delup^2) - 1;
+                robot(i).reward_capture_heading = 2*exp(-(delup^2)) - 1;
                 %sprintf(' The reward is %f ', robot(i).reward_capture_heading)
                 end
              end
