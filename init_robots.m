@@ -16,10 +16,12 @@ function [robot] = init_robots(robot_init, no_of_robots)
       robot(i).heading = robot_init(i).heading;   % start with zero heading
       [rule_critic, no_of_rules_critic] = init_mf_rules_robot(robot_init(i).critic);
       [rule_actor, no_of_rules_actor] = init_mf_rules_robot(robot_init(i).actor);
+      sprintf(' The number of rules for the critic is %d ', no_of_rules_critic)
+      sprintf(' The number of rules for the actor is %d ', no_of_rules_actor)
       for j=1:no_of_robots
          robot(i).capture(j).condition = 0; % cannot capture
          robot(i).capture(j).cond_change = 0; %Capture condition has not changed
-         robot(i).capture(j).count_success = 150; %How many steps to capture
+         robot(i).capture(j).count_success = 200; %How many steps to capture
          robot(i).capture(j).alpha_success = 0.1;
          robot(i).capture(j).beta_success = 0.05;
          robot(i).capture(j).psi_init = zeros(1, no_of_rules_critic); % initialze critic Parameters
@@ -32,6 +34,11 @@ function [robot] = init_robots(robot_init, no_of_robots)
          robot(i).capture(j).sigma = 1.0;
          robot(i).capture(j).des_heading = 0;
          robot(i).capture(j).del_heading = 0;
+         robot(i).capture(j).psi = zeros(1, no_of_rules_critic);
+         robot(i).capture(j).w = zeros(1, no_of_rules_actor);
+         robot(i).capture(j).psi_success = zeros(1, no_of_rules_critic);
+         robot(i).capture(j).w_success = zeros(1, no_of_rules_actor);
+         robot(i).capture(j).count_success_times = 0;
          robot(i).rel_pos(j).x = 0;
          robot(i).rel_pos(j).y = 0;
          robot(i).rel_vel(j).x = 0;
