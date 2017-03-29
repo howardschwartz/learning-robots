@@ -1,4 +1,4 @@
-function [w] = compute_actor_update(robot, no_of_robots)
+function [w] = compute_actor_update(robot)
 % [w] = compute_actor_update(robot, no_of_robots)
 %  compute the update to the actor parameters
 %
