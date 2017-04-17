@@ -53,7 +53,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
            robot(i).capture(j).del_heading = delup;
        end
    end
-  game_no = 200;
+  game_no = 2;
   %
   % % start here %
   % ***************************************************************
@@ -70,7 +70,9 @@ function [robot, no_of_robots] = robot_pursuer_evader()
       for k=1:no_of_robots
            if (robot(i).type == 1 && robot(k).type == 2)
                robot(i).capture(k).psi_init = robot(i).psi;
+               %robot(i).capture(k).psi_init = robot(i).capture(k).psi;
                robot(i).capture(k).w_init = robot(i).w;
+               %robot(i).capture(k).w_init = robot(i).capture(k).w;
            end
       end   
     end
@@ -97,12 +99,18 @@ function [robot, no_of_robots] = robot_pursuer_evader()
              for k=1:no_of_robots
                 if (robot(i).type == 1 && robot(k).type == 2)
                     inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y];
-                    [action] = compute_robot_action( robot(i), inputs );
-                    [value, phi_norm] = compute_robot_state_value(robot(i), inputs);
-                    robot(i).value_old = value;
+                    %[action] = compute_robot_action(robot(i), inputs);
+                    [action] = compute_robot_action(robot(i).capture(k), inputs);
+                    %[value, phi_norm] = compute_robot_state_value(robot(i), inputs);
+                    [value, phi_norm] = compute_robot_state_value(robot(i).capture(k), inputs);
+                    robot(i).capture(k).value_old = value;
+                    robot(i).capture(k).heading = action;
+                    robot(i).capture(k).phi_norm_critic = phi_norm;
+                    robot(i).capture(k).phi_norm_actor = phi_norm;
+                    %robot(i).value_old = value;
                     robot(i).heading = action;
-                    robot(i).phi_norm_critic = phi_norm;
-                    robot(i).phi_norm_actor = phi_norm;
+                    %robot(i).phi_norm_critic = phi_norm;
+                    %robot(i).phi_norm_actor = phi_norm;
                     %sprintf(' Compute phi_norm robot(%d)', i)
                 end
              end
@@ -113,7 +121,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
           for i=1:no_of_robots
               if (robot(i).type == 1) % Only pursuers learning
                   robot(i).noise = normrnd(0,robot(i).sigma);
-                  %Compute the new heading
+                 % sprintf(' The niose is for robot(%d), %f', i, robot(i).noise)
                   robot(i).heading = robot(i).heading + robot(i).noise;
               end
           end
@@ -135,16 +143,17 @@ function [robot, no_of_robots] = robot_pursuer_evader()
                        robot(i).capture(k).condition_change_to_fail = 1;
                        robot(i).capture(k).condition = 0;
                        [psi, w, sigma] = change_capture_condition(robot(i).capture(k));
-                       robot(i).psi = psi;
-                       robot(i).w = w;
-                       robot(i).sigma = sigma;
+                       robot(i).capture(k).psi = psi;
+                       robot(i).capture(k).w = w;
+                       robot(i).capture(k).sigma = sigma;
                        game_on = 0; % End the game
                    end
-                robot(i).capture(k).condition = condition;
-                robot(i).capture(k).des_heading = up_des;
-                robot(i).capture(k).del_heading = delup;
-                robot(i).reward_capture_heading = 2*exp(-(delup^2)) - 1;
-                %sprintf(' The reward is %f ', robot(i).reward_capture_heading)
+                   robot(i).capture(k).condition = condition;
+                   robot(i).capture(k).des_heading = up_des;
+                   robot(i).capture(k).del_heading = delup;
+                   reward_capture_heading = 2*exp(-(delup^2)) - 1;
+                   robot(i).capture(k).reward_capture_heading = 2*exp(-(delup^2)) - 1;
+                   %sprintf(' The reward is %f ', robot(i).reward_capture_heading)
                 end
              end
           end
@@ -158,13 +167,13 @@ function [robot, no_of_robots] = robot_pursuer_evader()
              for k=1:no_of_robots
                 if (robot(i).type == 1 && robot(k).type == 2)
                     inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y];
-                    [value, phi_norm] = compute_robot_state_value(robot(i), inputs);
-                    robot(i).phi_norm_critic = phi_norm;
-                    robot(i).phi_norm_actor = phi_norm;
-                    robot(i).value_old = robot(i).value;
-                    robot(i).value = value;
-                    [psi] = compute_critic_update(robot(i));
-                    [w] = compute_actor_update(robot(i));
+                    [value, phi_norm] = compute_robot_state_value(robot(i).capture(k), inputs);
+                    robot(i).capture(k).phi_norm_critic = phi_norm;
+                    robot(i).capture(k).phi_norm_actor = phi_norm;
+                    robot(i).capture(k).value_old = robot(i).capture(k).value;
+                    robot(i).capture(k).value = value;
+                    [psi] = compute_critic_update(robot(i).capture(k));
+                    [w] = compute_actor_update(robot(i).capture(k),robot(i).noise);
                     robot(i).w = w;
                     robot(i).psi = psi;
                     robot(i).capture(k).w = w;
@@ -181,10 +190,15 @@ function [robot, no_of_robots] = robot_pursuer_evader()
                     if(dist < 0.5) % We have successfully captured.
                        sprintf(' The distance is %f and count is %d and the epoch is %d', dist, count, j)
                        game_on = 0; %Captured
-                       [capture, psi, w, alpha, beta, sigma] = robot_captured(robot(i).capture(k), robot(i).psi, robot(i).w, count);
+                       [capture, psi, w, alpha, beta, sigma] = robot_captured(robot(i).capture(k), count);
                        robot(i).capture(k)
                        capture
                        robot(i).capture(k) = capture;
+                       robot(i).capture(k).psi = psi;
+                       robot(i).capture(k).w = w;
+                       robot(i).capture(k).alpha = alpha;
+                       robot(i).capture(k).beta = beta;
+                       robot(i).capture(k).sigma = sigma;
                        robot(i).psi = psi;
                        robot(i).w = w;
                        robot(i).alpha = alpha;
@@ -194,7 +208,7 @@ function [robot, no_of_robots] = robot_pursuer_evader()
                  end
              end
           end
-          if( count > 150) % stop the game
+          if( count > 200) % stop the game
              game_on = 0;
           end
           % Update the current figure with the new location of the players
