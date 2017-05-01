@@ -13,6 +13,8 @@ function [robot] = move_robots(robot, no_of_robots)
        y = yout(3, :);
        robot(i).x = y(1);
        robot(i).y = y(2);
+       robot(i).velx = v*cos(u);
+       robot(i).vely = v*sin(u);
       % sprintf(' move robot(%d)  %f', i, robot(i).x)
    end       
 end

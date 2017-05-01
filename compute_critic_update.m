@@ -2,8 +2,14 @@ function [psi] = compute_critic_update(robot)
 % [psi] = compute_critic_update( robot )
 %   Compute the update to the critic parameters
 %
-    reward = robot.reward_capture_heading;
-    gamma = robot.gamma_capture_heading;
+    if (robot.condition == 1)% If it can capture
+        reward = robot.reward_capture_heading;
+        gamma = robot.gamma_capture_heading;
+    end
+     if (robot.condition == 0)% If it cannot capture
+        reward = robot.reward_rel_vel;
+        gamma = robot.gamma_rel_vel;
+    end
     alpha = robot.alpha;
     value = robot.value;
     value_old = robot.value_old;
