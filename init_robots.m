@@ -42,7 +42,7 @@ function [robot] = init_robots(robot_init, no_of_robots)
          robot(i).rel_pos(j).x = 0;
          robot(i).rel_pos(j).y = 0;
          robot(i).rel_vel(j).x = 0;
-         robot(i).rel_pos(j).y = 0;
+         robot(i).rel_vel(j).y = 0;
          robot(i).los(j) = 0;
       end
       robot(i).sigma = 1.0; % initial exploration variance
