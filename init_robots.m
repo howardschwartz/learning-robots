@@ -36,6 +36,8 @@ function [robot] = init_robots(robot_init, no_of_robots)
          robot(i).capture(k).del_heading = 0;
          robot(i).capture(k).psi = zeros(1, no_of_rules_critic);
          robot(i).capture(k).w = zeros(1, no_of_rules_actor);
+         robot(i).capture(k).no_capture_psi = zeros(1, no_of_rules_critic);
+         robot(i).capture(k).no_capture_w = zeros(1, no_of_rules_actor);
          robot(i).capture(k).psi_success = zeros(1, no_of_rules_critic);
          robot(i).capture(k).w_success = zeros(1, no_of_rules_actor);
          robot(i).capture(k).count_success_times = 0;
@@ -56,7 +58,7 @@ function [robot] = init_robots(robot_init, no_of_robots)
          robot(i).rel_pos(k).x = 0;
          robot(i).rel_pos(k).y = 0;
          robot(i).rel_vel(k).x = 0;
-         robot(i).rel_vel(k).y = 0;
+         robot(i).rel_pos(k).y = 0;
          robot(i).los(k) = 0;
       end
       robot(i).sigma = 1.0; % initial exploration variance
