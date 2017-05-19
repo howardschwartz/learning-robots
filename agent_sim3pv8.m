@@ -931,8 +931,8 @@ sigma_success_plot(j) = sigma_success;
             %remember the parameters for success!
             psil2 = psil2_success;
             wl2 = wl2_success; 
-            alpha = alpha_success;
-            beta = beta_success;
+            %alpha = alpha_success;
+            %beta = beta_success;
             sigma = sigma_success;
             sprintf(' The count is high reset sigma')
             %psil2 = psil2_success_init;
