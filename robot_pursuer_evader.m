@@ -174,12 +174,8 @@ function [robot, no_of_robots] = robot_pursuer_evader()
                     % fail
                     %
                     if (robot(i).capture(k).condition_change_to_fail == 0)
-                       [psi] = compute_critic_update(robot(i).capture(k));
-                       [w] = compute_actor_update(robot(i).capture(k),robot(i).noise);
-                       robot(i).w = w;
-                       robot(i).psi = psi;
-                       robot(i).capture(k).w = w;
-                       robot(i).capture(k).psi = psi;
+                       [robot(i).capture(k)] = compute_critic_update(robot(i).capture(k));
+                       [robot(i).capture(k)] = compute_actor_update(robot(i).capture(k),robot(i).noise);
                     end
                 end
              end
@@ -231,12 +227,12 @@ function [robot, no_of_robots] = robot_pursuer_evader()
      for i=1:no_of_robots
              for k=1:no_of_robots
                  if (robot(i).type == 1 && robot(k).type == 2)
-                     robot(i).alpha = 0.9999*robot(i).alpha;
-                     robot(i).beta = 0.9999*robot(i).beta;
-                     robot(i).sigma = 0.999*robot(i).sigma;
-                     robot(i).capture(k).alpha = 0.9999*robot(i).capture(k).alpha;
-                     robot(i).capture(k).beta = 0.9999*robot(i).capture(k).beta;
-                     robot(i).capture(k).sigma = 0.999*robot(i).capture(k).sigma;
+                     robot(i).alpha = 0.999*robot(i).alpha;
+                     robot(i).beta = 0.999*robot(i).beta;
+                     robot(i).sigma = 0.99*robot(i).sigma;
+                     robot(i).capture(k).alpha = 0.999*robot(i).capture(k).alpha;
+                     robot(i).capture(k).beta = 0.999*robot(i).capture(k).beta;
+                     robot(i).capture(k).sigma = 0.99*robot(i).capture(k).sigma;
                  end
              end
      end
@@ -257,15 +253,15 @@ function [robot, no_of_robots] = robot_pursuer_evader()
     if  mod(j,100) == 0
       fileName = sprintf('Epoch_%d.jpg', j); % define the file name
       saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
-   end 
+    end 
   end
   for i=1:no_of_robots
-             for k=1:no_of_robots
-                 if (robot(i).type == 1 && robot(k).type == 2)
-                       sprintf(' The Game Is Over Print out the final Capture information')
-                       robot(i).capture(k)
-                    end
-                 end
-             end
+     for k=1:no_of_robots
+         if (robot(i).type == 1 && robot(k).type == 2)
+             sprintf(' The Game Is Over Print out the final Capture information')
+             robot(i).capture(k)
+         end
+     end
+  end
 end
 

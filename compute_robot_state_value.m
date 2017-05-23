@@ -20,12 +20,21 @@ function [value, phi_norm] = compute_robot_state_value( robot_capture, input )
     end
     %
     % Compute the new value of the state
+    % Compute the value for pursuer CAN capture
     %
     value = 0;
-    for i=1:no_of_rules
-        value = value + phi_norm(i)*robot_capture.psi(i);
+    if (robot_capture.condition == 1)
+       for i=1:no_of_rules
+           value = value + phi_norm(i)*robot_capture.psi(i);
+       end
     end
-
-
+    %
+    % Compute the value for pursuer CANNOT capture
+    %
+    if (robot_capture.condition == 0)
+        for i=1:no_of_rules
+           value = value + phi_norm(i)*robot_capture.no_capture_psi(i);
+        end
+    end
 end
 
