@@ -1,4 +1,4 @@
-function [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los( robot, no_of_robots, dt )
+function [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los( robot, no_of_robots)
 %   [rel_dist, rel_vel, los] = copute_rel_dist_vel_los( robot )
 %   Detailed explanation goes here
 %

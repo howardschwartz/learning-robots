@@ -1,4 +1,4 @@
-function [capture, psi, w, alpha, beta, sigma] = robot_captured(captured, psi, w, count)
+function [capture, psi, w, alpha, beta, sigma] = robot_captured(captured, count)
 % [capture] = robot_captured(captured)
 % This functions sets the parametrs for the captured robots
 %
@@ -6,8 +6,8 @@ function [capture, psi, w, alpha, beta, sigma] = robot_captured(captured, psi, w
    if (count < captured.count_success)
        capture.count_success = count;
        %remember the parameters for success!
-       capture.psi_success = psi;
-       capture.w_success = w;
+       capture.psi_success = captured.psi;
+       capture.w_success = captured.w;
        capture.psi_success_init = captured.psi_init;
        capture.w_success_init = captured.w_init;
        capture.alpha_success = captured.alpha;
@@ -16,8 +16,8 @@ function [capture, psi, w, alpha, beta, sigma] = robot_captured(captured, psi, w
        capture.count_success_times = 1;
     elseif (count == captured.count_success)
         %remember the parameters for success!
-       capture.psi_success = psi;
-       capture.w_success = w;
+       capture.psi_success = captured.psi;
+       capture.w_success = captured.w;
        capture.psi_success_init = captured.psi_init;
        capture.w_success_init = captured.w_init;
        capture.alpha_success = captured.alpha;
@@ -28,8 +28,11 @@ function [capture, psi, w, alpha, beta, sigma] = robot_captured(captured, psi, w
    %remember the parameters for success!
    psi = capture.psi_success;
    w = capture.w_success;
-   alpha = capture.alpha_success;
-   beta = capture.beta_success;
-   sigma = capture.sigma_success;
+   %alpha = capture.alpha_success;
+  %beta = capture.beta_success;
+   alpha = capture.alpha;
+   beta = capture.beta;
+   %sigma = capture.sigma_success;
+   sigma = capture.sigma;
 end
 
