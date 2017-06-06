@@ -46,7 +46,7 @@ ve = speed;
 % the instantaneous rewards
 %
 gamma_init = 0.0;
-sigma_init = 1;
+sigma_init = 1.0;
 mu = 0;
 alpha_init = 0.1;
 beta_init = 0.05;
@@ -906,8 +906,8 @@ sigma_success_plot(j) = sigma_success;
             wl2_success = wl2;
             psil2_success_init = psil2_init;
             wl2_success_init = wl2_init;
-            alpha_success = alpha;
-            beta_success = beta;
+            %alpha_success = alpha;
+            %beta_success = beta;
             sigma_success = sigma;
             count_success_times = 1;
         end
@@ -917,8 +917,8 @@ sigma_success_plot(j) = sigma_success;
             wl2_success = wl2;
             psil2_success_init = psil2_init;
             wl2_success_init = wl2_init;
-            alpha_success = alpha;
-            beta_success = beta;
+            %alpha_success = alpha;
+            %beta_success = beta;
             count_success_times = count_success_times + 1;
             sigma_success = (0.95)*sigma_success;
             %psil2 = psil2_success_init;
@@ -931,8 +931,8 @@ sigma_success_plot(j) = sigma_success;
             %remember the parameters for success!
             psil2 = psil2_success;
             wl2 = wl2_success; 
-            alpha = alpha_success;
-            beta = beta_success;
+           % alpha = alpha_success;
+            %beta = beta_success;
             sigma = sigma_success;
             sprintf(' The count is high reset sigma')
             %psil2 = psil2_success_init;
