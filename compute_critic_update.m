@@ -16,6 +16,7 @@ function [robot] = compute_critic_update(robot)
     phi_norm =robot.phi_norm_critic;
     no_of_rules = robot.no_of_rules_critic;
     td = (reward + gamma*value) - value_old;
+    %td = (reward + gamma*value) - value;
     %
     % If the robot can capture
     %

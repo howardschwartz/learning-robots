@@ -1,10 +1,13 @@
-function [action] = compute_robot_action( robot_capture, input, input_range)
+function [ action ] = compute_evader_action(robot, input, input_range)
+% compute_evader_action (robot, inputs) Computes the heading of the 
+% evader with respect to the given pursuer.
+%
 % This function computes the robot action
 % The inputs are the robot structure and the input vector
 % The output is the heading, but can be anything
 %
-    no_of_rules = robot_capture.no_of_rules_actor;
-    rule = robot_capture.rule_actor;
+    no_of_rules = robot.no_of_rules_actor;
+    rule = robot.rule_actor;
     phi = zeros(1, no_of_rules);
     for i=1:no_of_rules
        phi(i) = fire_strength_for_rule(input, rule(i).mf, input_range); % compute the firing strength
@@ -20,11 +23,11 @@ function [action] = compute_robot_action( robot_capture, input, input_range)
       end
     end
     %
-    % Compute the action for pursuer CAN capture
+    % Compute the action for evader
     %
     u = 0;
-    w = robot_capture.w;
-    if (robot_capture.condition == 1) 
+    w = robot.w;
+    if (robot.condition == 1) 
        for i=1:no_of_rules
           u = u + phi_norm(i)*w(i);
         %sprintf(' phi_norm(%d) is %f ', i, phi_norm(i))
@@ -33,10 +36,9 @@ function [action] = compute_robot_action( robot_capture, input, input_range)
     %
     % Compute the action for pursuer CANNOT capture
     %
-    no_capture_w = robot_capture.no_capture_w;
-    if (robot_capture.condition == 0) 
+    if (robot.condition == 0) 
        for i=1:no_of_rules
-          u = u + phi_norm(i)*no_capture_w(i);
+          u = u + phi_norm(i)*robot.no_capture_w(i);
         %sprintf(' phi_norm(%d) is %f ', i, phi_norm(i))
        end
     end

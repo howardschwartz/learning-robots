@@ -5,9 +5,11 @@ function [dist_min, evader, pursuer] = compute_nearest_pursuer(robot, no_of_robo
 % the minimum distance betwee and evader and a pursuer
 %
     dist_min = 100;
+    evader = 0;
+    pursuer = 0;
     for i=1:no_of_robots
          for k=1:no_of_robots
-             if (robot(i).type == 1 && robot(k).type == 2)
+             if (robot(i).type == 1 && robot(k).type == 2 && robot(i).capture(k).condition == 1)
                 if (robot(i).capture(k).dist < dist_min)
                     dist_min = robot(i).capture(k).dist;
                     evader = k;
