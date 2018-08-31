@@ -14,10 +14,10 @@ function [robot, rel_dist, rel_speed, los] = compute_rel_dist_vel_los( robot, no
               robot(i).rel_pos(j).y = robot(j).y - robot(i).y;
               robot(i).rel_vel(j).x = robot(j).velx - robot(i).velx;
               robot(i).rel_vel(j).y = robot(j).vely - robot(i).vely;
-              robot(i).los(j) = atan2(robot(i).rel_pos(j).y, robot(i).rel_pos(j).x);
+              robot(i).los(j).actual = atan2(robot(i).rel_pos(j).y, robot(i).rel_pos(j).x);
               rel_dist(i, j) = sqrt(robot(i).rel_pos(j).x^2 + robot(i).rel_pos(j).y^2);
               rel_speed(i, j) = sqrt(robot(i).rel_vel(j).x^2 + robot(i).rel_vel(j).y^2);
-              los(i, j) = robot(i).los(j);
+              los(i, j) = robot(i).los(j).actual;
            end
        end
     end

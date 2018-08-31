@@ -8,18 +8,18 @@ function [rule, no_of_rules] = init_mf_rules()
   no_of_inputs = 2; % define the number of inputs
   input(1).number = 3; % input 1 has two membership functions
   input(2).number = 3; % input 2 has 3 membership functions
- % input(3).number = 3; % input 3 has 2 membership functions
+%  input(3).number = 3; % input 3 has 2 membership functions
 %
   input(1).range = [-10, 10];
   input(2).range = [-10, 10];
- % input(3).range = [0, 2*pi];
+%  input(3).range = [0, 2*pi];
 %
 % From here everything should be done automatically
 %
     for i=1:no_of_inputs
         input(i).mf = define_mf_triangle(input(i).range, input(i).number);
     end
-    x = input
+    %x = input
     %input(1).mf
     %
     % create the no_mf_per_input

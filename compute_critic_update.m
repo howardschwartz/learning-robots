@@ -7,6 +7,7 @@ function [robot] = compute_critic_update(robot)
         gamma = robot.gamma_capture_heading;
     end
      if (robot.condition == 0)% If it cannot capture
+        %reward = robot.reward_heading_difference;
         reward = robot.reward_rel_vel;
         gamma = robot.gamma_rel_vel;
     end
@@ -15,7 +16,12 @@ function [robot] = compute_critic_update(robot)
     value_old = robot.value_old;
     phi_norm =robot.phi_norm_critic;
     no_of_rules = robot.no_of_rules_critic;
+    %
     td = (reward + gamma*value) - value_old;
+%     if ( abs(value_old) > 1.1*abs(reward))
+%         sprintf(' value is too big ')
+%     end
+    %td = (reward + gamma*value) - value;
     %
     % If the robot can capture
     %
@@ -32,10 +38,16 @@ function [robot] = compute_critic_update(robot)
     %
     if (robot.condition == 0)% If it cannot capture
        no_capture_psi = robot.no_capture_psi;
+       %psi = robot.psi;
        for j=1:no_of_rules
            no_capture_psi(j) = no_capture_psi(j)+ alpha*td*phi_norm(j);
+%            if (j == 53)
+%                sprintf(' Value psi(%d) is %f', j, no_capture_psi(j))
+%            end
+           %psi(j) = psi(j)+ alpha*td*phi_norm(j);
            %sprintf(' Value psi(%d) is %f', j, psi(j))
        end
        robot.no_capture_psi = no_capture_psi;
+       %robot.psi = psi;
     end
 end

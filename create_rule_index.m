@@ -1,4 +1,3 @@
-
 function [final_Rule_Base, final_Rule_Index] = create_rule_index(no_mf_per_input)
     % this function rule_index = create_rule_index(no_mf_per_input)
     % creates a rule index that defines the membership function for each input

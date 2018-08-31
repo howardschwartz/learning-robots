@@ -1,4 +1,4 @@
-function [capture, up_des, delup] = capture_condition(robot1, robot2)
+function [capture, up_des, delup] = capture_conditionv6(robot1, robot2, i, k)
 %
 % This function computes the capture condition of robot 1 to robot 2.
 % first make sure robot 1 is a pursuer and robot 2 is an evader otherwise
@@ -27,7 +27,9 @@ function [capture, up_des, delup] = capture_condition(robot1, robot2)
         delup = up_des - robot1.heading;
         %sprintf(' The error in heading is %f ', delup)
         capture = 1;
-        %sprintf(' The capture condition is true ')
+        if (i == 4)
+            sprintf(' The capture condition for robot 4 is true ')
+        end
       else
         capture = 0;
         up_des = robot2.heading;

@@ -1,4 +1,4 @@
-function [robot] = compute_actor_update(robot, noise)
+function [robot] = compute_actor_updatev6(robot, noise, not_zero_count)
 % [w] = compute_actor_update(robot, no_of_robots)
 %  compute the update to the actor parameters
 %
@@ -6,19 +6,19 @@ function [robot] = compute_actor_update(robot, noise)
     value = robot.value;
     value_old = robot.value_old;
     phi_norm =robot.phi_norm_actor;
+    rules_fired = robot.current_rules_fired;
+    rule_fire_count = robot.rule_fire_count;
     no_of_rules = robot.no_of_rules_actor;
     if (robot.condition == 1)% If it can capture
         reward = robot.reward_capture_heading;
         gamma = robot.gamma_capture_heading;
         w  = robot.w;
         td = (reward + gamma*value) - value_old;
-%         if ( abs(value_old) > 1.1*abs(reward))
-%             sprintf(' value is too big ')
-%         end
-        for j=1:no_of_rules
+        for j=1:rule_fire_count
            %deltaw = beta*sign(td*noise)*phi_norm(j);
-           deltaw = beta*(td*noise)*phi_norm(j);
-           w(j) = w(j)+ deltaw;
+           j1 = rules_fired(j);
+           deltaw = beta*(td*noise)*phi_norm(j1);
+           w(j1) = w(j1)+ deltaw;
         end
         robot.w = w;
     end
@@ -29,13 +29,11 @@ function [robot] = compute_actor_update(robot, noise)
         w = robot.no_capture_w;
         %w = robot.w;
         td = (reward + gamma*value) - value_old;
-%         if ( abs(value_old) > 1.1*abs(reward))
-%             sprintf(' value is too big ')
-%         end
-         for j=1:no_of_rules
+        for j=1:rule_fire_count
+            j1 = rules_fired(j);
            %deltaw = beta*sign(td*noise)*phi_norm(j);
-           deltaw = beta*(td*noise)*phi_norm(j);
-           w(j) = w(j)+ deltaw;
+           deltaw = beta*(td*noise)*phi_norm(j1);
+           w(j1) = w(j1)+ deltaw;
         end
         %robot.w = w;
         robot.no_capture_w = w;
