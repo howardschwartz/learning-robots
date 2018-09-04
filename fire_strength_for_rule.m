@@ -1,20 +1,20 @@
-function wl = fire_strength_for_rule(sinput, rule)
+function wl = fire_strength_for_rule(input, rule, input_range)
 % w_l = w_l = fire_strength_for_rule(sinput, rule) where sinput
 % is the input to the rule. the input is an array and the rule 
 % is a matrix of membership funtions with number of rows equal to
 % the number of inputs.
 %
-   [n,m] = size(sinput); % m is the number of inputs
+   [n,m] = size(input); % m is the number of inputs
    [l,n3] = size(rule); % l is the number of membership functions in the rule.
 %
-   if (l ~= m || n3 ~= 3)
-       print('invalid parameters')
-       return
-   end
+  % if (l ~= m || n3 ~= 3)
+   %    print('invalid parameters')
+   %    return
+  % end
 %
-   wlrule = zeros(m);
+   wlrule = zeros(1, m);
    for i=1:m
-       wlrule(i) = memgradetriangle(sinput(i), rule(i, :));
+       wlrule(i) = memgradetriangle(input(i), rule(i, :), input_range(i));
    end
 % use the product rule
    wl_prod = prod(wlrule);
@@ -23,7 +23,7 @@ function wl = fire_strength_for_rule(sinput, rule)
 end
 
 
-function phi = memgradetriangle(x, mf)
+function phi = memgradetriangle(x, mf, x_range)
    % Defines the membership grade of state x in MF
     a = mf(1);
     b = mf(2);
@@ -40,5 +40,14 @@ function phi = memgradetriangle(x, mf)
     end
     if(x >= c)
        phi = 0;
+    end
+    %
+    % Check for out of range
+    %
+    if (a < x_range.range_min && x < x_range.range_min)
+        phi = 1;
+    end
+    if (c > x_range.range_max && x > x_range.range_max)
+        phi = 1;
     end
 end
