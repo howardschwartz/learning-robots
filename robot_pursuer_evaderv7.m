@@ -4,7 +4,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
    %
    % Read in the robot data
    %
-   fid = fopen('robot7.txt');
+   fid = fopen('robot.txt');
    no_of_data = [25, inf];
    robot_data = fscanf(fid, '%f', no_of_data);
    robot_data = robot_data';
