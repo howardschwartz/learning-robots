@@ -1,4 +1,4 @@
-function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
+function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
    % Simulation of the multi-Robot pursuer evader machine learning game
    % Started by Prof. Schwartz Oct. 30, 2016. Adding in the virtual robots.
    %
@@ -89,7 +89,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
    y = zeros(1, no_of_robots);
    speed = zeros(1, no_of_robots);
    count3 = 0;
-   game_no = 500;
+   game_no = 1000;
    count_max = 150;
    v_reward_capture_max = -100;
    v_reward_no_capture_max = -100;
@@ -202,9 +202,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
                     robot(i).capture(k).rule_fire_count = rule_fire_count;
                     robot(i).capture(k).dist = rel_dist(i, k);
                     robot(i).capture(k).condition_change_to_fail = 0;
-                    [robot(i).capture(k), action] = compute_robot_actionv7(robot(i).capture(k), rule_fire_count);
-                    robot(i).capture(k).heading = action;
-                    robot(i).heading = action;
+                   %
                     for m = 1:no_of_v_robots
                        robot(i).capture(k).virtual(m).phi_norm_critic = phi_norm;
                        robot(i).capture(k).virtual(m).phi_norm_actor = phi_norm;
@@ -228,6 +226,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
                            if(rules_fired == robot(i).capture(k).rules_fired(count31).rules_fired)
                                robot(i).capture(k).rules_fired(count31).number = robot(i).capture(k).rules_fired(count31).number + 1;
                                robot(i).capture(k).rules_fired(count31).condition_old = robot(i).capture(k).condition;
+                               rule_set_number = count31;
                                rule_found = 1;
                            end
                         end
@@ -249,9 +248,15 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
                           robot(i).capture(k).rules_fired(count3).td_avg = 0;
                           robot(i).capture(k).rules_fired(count3).td_sigma = 0;
                           robot(i).capture(k).rules_fired(count3).td_converged = 0;
+                          robot(i).capture(k).rules_fired(count3).parameters_capture = zeros(1, 10);
+                          robot(i).capture(k).rules_fired(count3).parameters_no_capture = zeros(1, 10);
                           robot(i).capture(k).rules_fired(count3).zed = 0;
+                          rule_set_number = count3;
                           robot(i).capture(k).number_of_rules_fired = count3;
                     end
+                    [robot(i).capture(k), action] = compute_robot_actionv8(robot(i).capture(k), rule_fire_count, rule_set_number);
+                    robot(i).capture(k).heading = action;
+                    robot(i).heading = action;
                 end
              end
           end
@@ -556,7 +561,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
                        [robot(i).capture(k)] = compute_critic_updatev6(robot(i).capture(k));
                        %[robot(i).capture(k)] = compute_actor_updatev6(robot(i).capture(k),robot(i).noise);
 					   %[robot(i).capture(k)] = v_compute_critic_updatev7(robot(i).capture(k), robot(i).no_update, no_of_v_robots);
-					   [robot(i).capture(k)] = v_compute_actor_updatev7(robot(i).capture(k),robot(i).vnoise, robot(i).no_update, no_of_v_robots);
+					   [robot(i).capture(k)] = v_compute_actor_updatev8(robot(i).capture(k),robot(i).vnoise, robot(i).no_update, no_of_v_robots);
                     end
                 end
              end
@@ -625,9 +630,9 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
                     dist = sqrt((robot(i).rel_pos(k).x)^2 + (robot(i).rel_pos(k).y)^2);
                     if(dist < 0.5) % We have successfully captured.
                        sprintf(' Pursuer %d has captured the evader. The distance is %f and count is %d and the epoch is %d', i, dist, count, j)
-                       if (j > 100)
+                       if (j > 400)
                           game_on = 0; %Captured
-                          if( j > 150)
+                          if( j > 900)
                           if (i == 4 || i == 3 || i == 2)
                              fileName = sprintf('Epoch_%d.jpg', j); % define the file name
                               saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
@@ -667,7 +672,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
              % uncomment this line to get real time visualization of the
              % players trajectory. (Warning: May slow down your system.)
              % pause(0.0000001);
-             if (j == 100)
+             if (j == 900)
                 count2 = count2+1;
                 movie_frame(count2) = getframe;
              end
@@ -702,7 +707,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv7()
     %
     % Save the game plots in the new folder
     % *******************************************************************
-    if  mod(j,20) == 0
+    if  mod(j,100) == 0
       fileName = sprintf('Epoch_%d.jpg', j); % define the file name
       saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
     end 

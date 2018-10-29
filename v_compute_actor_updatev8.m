@@ -1,4 +1,4 @@
-function [robot] = v_compute_actor_updatev7(robot, noise, no_update, no_of_v_robots)
+function [robot] = v_compute_actor_updatev8(robot, noise, no_update, no_of_v_robots)
 % [w] = compute_actor_update(robot, no_of_robots)
 %  compute the update to the actor parameters
 %
@@ -22,16 +22,19 @@ function [robot] = v_compute_actor_updatev7(robot, noise, no_update, no_of_v_rob
         % Has the current rule set been fired yet?
         %
             if(robot.current_rules_fired == robot.rules_fired(count31).rules_fired)
+                rule_set_number = count31;
                 if (robot.condition == 1 && robot.rules_fired(count31).condition == 1)
                    reward_max = robot.rules_fired(count31).reward_max_cap;
                    reward_max_old = robot.rules_fired(count31).reward_max_cap_old;
                    converged  = robot.rules_fired(count31).td_converged;
+                   parameters_capture = robot.rules_fired(count31).parameters_capture;
                    go_to_update = 1;
                 end
                 if (robot.condition == 0 && robot.rules_fired(count31).condition == 0)
                    reward_max = robot.rules_fired(count31).reward_max_no_cap;
                    reward_max_old = robot.rules_fired(count31).reward_max_no_cap_old;
                    converged  = robot.rules_fired(count31).td_converged;
+                   parameters_no_capture = robot.rules_fired(count31).parameters_no_capture;
                    go_to_update = 1;
                 end
                  number_of_times_fired = robot.rules_fired(count31).number;
@@ -86,10 +89,12 @@ function [robot] = v_compute_actor_updatev7(robot, noise, no_update, no_of_v_rob
                  j1 = rules_fired(j);
                  deltaw = beta*(td_update*noise_update)*phi_norm(j1);
                  w(j1) = w(j1)+ deltaw;
+                 parameters_capture(j) = parameters_capture(j) + deltaw;
               end
 %             end
 %         end
         robot.w = w;
+        robot.rules_fired(rule_set_number).parameters_capture = parameters_capture;
     end
     if (robot.condition == 0 && go_to_update == 1)% If it cannot capture
         %reward = robot.v_reward_heading_difference;
@@ -125,8 +130,10 @@ function [robot] = v_compute_actor_updatev7(robot, noise, no_update, no_of_v_rob
                  %deltaw = beta*sign(td*noise)*phi_norm(j);
                 deltaw = beta*(td_update*noise_update)*phi_norm(j1);
                 w(j1) = w(j1)+ deltaw;
+                parameters_no_capture(j) = parameters_no_capture(j) + deltaw;
         end
         robot.no_capture_w = w;
+        robot.rules_fired(rule_set_number).parameters_no_capture = parameters_no_capture;
     end
 end
 
