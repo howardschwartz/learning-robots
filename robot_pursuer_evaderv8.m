@@ -89,8 +89,10 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
    y = zeros(1, no_of_robots);
    speed = zeros(1, no_of_robots);
    count3 = 0;
-   game_no = 1000;
+   game_no = 1500;
+   movie_stop = 0;
    count_max = 150;
+   td_count = 1;
    v_reward_capture_max = -100;
    v_reward_no_capture_max = -100;
    %
@@ -104,12 +106,14 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
            robot(i).capture(k).del_heading = delup;
        end
    end
-  
   %
   % % start here %
   % ***************************************************************
   for j=1:game_no % This is the loop for each epoch
     sprintf(' The game number is %d ', j)
+    if(movie_stop == 0)
+        clearvars movie_frame;
+    end
     %
     % Initialize pursuer and evader positions velocity and heading
     %
@@ -190,19 +194,68 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                     robot(i).capture(k).condition_change_to_fail = 0;
                     inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y, robot(k).heading];
                     if(inputs(1) > 10 || inputs(1) < -10 || inputs(2) > 10 || inputs(2) < -10 || inputs(3) > pi || inputs(3) < - pi)
-                         sprintf(' The input is out of range, the pursuer is %d ', i)
-                         inputs
+                         %sprintf(' The input is out of range, the pursuer is %d ', i)
+                         %inputs
                          robot(i).no_update = 1;
                     end
-                    [value, phi_norm, not_zero_phi, rule_fire_count, rules_fired] = compute_robot_state_value(robot(i).capture(k), inputs, robot(i).critic.input);
-                    robot(i).capture(k).value_old = value;
+                    %[value, phi_norm, not_zero_phi, rule_fire_count, rules_fired] = compute_robot_state_value(robot(i).capture(k), inputs, robot(i).critic.input);
+                    [phi_norm, not_zero_phi, rule_fire_count, rules_fired] = compute_rules_fired_set(robot(i).capture(k), inputs, robot(i).critic.input);
                     robot(i).capture(k).phi_norm_critic = phi_norm;
                     robot(i).capture(k).phi_norm_actor = phi_norm;
+                    %
+                    % Count how many times a rule has fired
+                    %
+                    [rule_set_number, number, condition_old, rule_found] = search_for_rule_set(robot(i).capture(k), rules_fired);
+                    if (rule_found == 1)
+                       robot(i).capture(k).rules_fired(rule_set_number).number = number;
+                       robot(i).capture(k).rules_fired(rule_set_number).condition_old = condition_old;
+                       robot(i).capture(k).rules_fired(rule_set_number).phi_norm = phi_norm;
+                    end
+                    %
+                    % If this a new rule set then initialize it
+                    %
+                    count3 = robot(i).capture(k).number_of_rules_fired;
+                    if (rule_found == 0)
+                          count3 = count3 + 1;
+                          robot(i).capture(k).rules_fired(count3).rules_fired = rules_fired;
+                          robot(i).capture(k).rules_fired(count3).number = 1;
+                          robot(i).capture(k).rules_fired(count3).phi_norm = phi_norm;
+                          robot(i).capture(k).rules_fired(count3).reward_max_cap = -100;
+                          robot(i).capture(k).rules_fired(count3).reward_max_cap_old = -100;
+                          robot(i).capture(k).rules_fired(count3).reward_max_no_cap = -100;
+                          robot(i).capture(k).rules_fired(count3).reward_max_no_cap_old = -100;
+                          robot(i).capture(k).rules_fired(count3).condition = robot(i).capture(k).condition;
+                          robot(i).capture(k).rules_fired(count3).condition_old = robot(i).capture(k).condition;
+                          robot(i).capture(k).rules_fired(count3).td = 100;
+                          robot(i).capture(k).rules_fired(count3).td_avg = 0;
+                          robot(i).capture(k).rules_fired(count3).td_sigma = 0;
+                          robot(i).capture(k).rules_fired(count3).td_actor = 100;
+                          robot(i).capture(k).rules_fired(count3).td_avg_actor = 0;
+                          robot(i).capture(k).rules_fired(count3).td_sigma_actor = 0;
+                          robot(i).capture(k).rules_fired(count3).td_converged = 0;
+                          robot(i).capture(k).rules_fired(count3).parameters_capture = zeros(1, 10);
+                          robot(i).capture(k).rules_fired(count3).parameters_no_capture = zeros(1, 10);
+                          robot(i).capture(k).rules_fired(count3).psi_parameters_capture = zeros(1, 10);
+                          robot(i).capture(k).rules_fired(count3).psi_parameters_no_capture = zeros(1, 10);
+                          robot(i).capture(k).rules_fired(count3).zed = 0;
+                          rule_set_number = count3;
+                          robot(i).capture(k).number_of_rules_fired = count3;
+                    end
+                    %[value] = compute_robot_state_valuev8(robot(i).capture(k), phi_norm, rule_fire_count, rules_fired);
+                    [value] = compute_robot_state_valuev81(robot(i).capture(k), rule_fire_count, rule_set_number);
+                    robot(i).capture(k).value_old = value;
+                    robot(i).capture(k).rules_fired(rule_set_number).value = value;
+%                     robot(i).capture(k).phi_norm_critic = phi_norm;
+%                     robot(i).capture(k).phi_norm_actor = phi_norm;
                     robot(i).capture(k).current_rules_fired = rules_fired;
                     robot(i).capture(k).rule_fire_count = rule_fire_count;
                     robot(i).capture(k).dist = rel_dist(i, k);
                     robot(i).capture(k).condition_change_to_fail = 0;
-                   %
+                    [robot(i).capture(k), action] = compute_robot_actionv8(robot(i).capture(k), rule_fire_count, rule_set_number);
+                    robot(i).capture(k).heading = action;
+                    robot(i).capture(k).rule_set_number = rule_set_number;
+                    robot(i).heading = action;
+                     %
                     for m = 1:no_of_v_robots
                        robot(i).capture(k).virtual(m).phi_norm_critic = phi_norm;
                        robot(i).capture(k).virtual(m).phi_norm_actor = phi_norm;
@@ -215,48 +268,6 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                        robot(i).capture(k).no_capture_not_zero_phi = not_zero_phi;
                     end
                     %
-                    % Count how many times a rule has fired
-                    %
-                    rule_found = 0;
-                    count3 = robot(i).capture(k).number_of_rules_fired;
-                    if (count3 > 0)
-                        for count31 = 1:count3
-                        % Has the current rule set been fired yet?
-                        %
-                           if(rules_fired == robot(i).capture(k).rules_fired(count31).rules_fired)
-                               robot(i).capture(k).rules_fired(count31).number = robot(i).capture(k).rules_fired(count31).number + 1;
-                               robot(i).capture(k).rules_fired(count31).condition_old = robot(i).capture(k).condition;
-                               rule_set_number = count31;
-                               rule_found = 1;
-                           end
-                        end
-                    end
-                    %
-                    % Is this a new rule set?
-                    %
-                    if (rule_found == 0)
-                          count3 = count3 + 1;
-                          robot(i).capture(k).rules_fired(count3).rules_fired = rules_fired;
-                          robot(i).capture(k).rules_fired(count3).number = 1;
-                          robot(i).capture(k).rules_fired(count3).reward_max_cap = -100;
-                          robot(i).capture(k).rules_fired(count3).reward_max_cap_old = -100;
-                          robot(i).capture(k).rules_fired(count3).reward_max_no_cap = -100;
-                          robot(i).capture(k).rules_fired(count3).reward_max_no_cap_old = -100;
-                          robot(i).capture(k).rules_fired(count3).condition = robot(i).capture(k).condition;
-                          robot(i).capture(k).rules_fired(count3).condition_old = robot(i).capture(k).condition;
-                          robot(i).capture(k).rules_fired(count3).td = 100;
-                          robot(i).capture(k).rules_fired(count3).td_avg = 0;
-                          robot(i).capture(k).rules_fired(count3).td_sigma = 0;
-                          robot(i).capture(k).rules_fired(count3).td_converged = 0;
-                          robot(i).capture(k).rules_fired(count3).parameters_capture = zeros(1, 10);
-                          robot(i).capture(k).rules_fired(count3).parameters_no_capture = zeros(1, 10);
-                          robot(i).capture(k).rules_fired(count3).zed = 0;
-                          rule_set_number = count3;
-                          robot(i).capture(k).number_of_rules_fired = count3;
-                    end
-                    [robot(i).capture(k), action] = compute_robot_actionv8(robot(i).capture(k), rule_fire_count, rule_set_number);
-                    robot(i).capture(k).heading = action;
-                    robot(i).heading = action;
                 end
              end
           end
@@ -301,7 +312,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                     %sprintf(' Robot %d has saturated at pi ', i)
                     robot(i).no_update = 1;
                 end
-                 if(robot(i).heading < -pi)
+                if(robot(i).heading < -pi)
                     robot(i).heading = -pi;
                     %sprintf(' Robot %d has saturated at -pi ', i)
                     robot(i).no_update = 1;
@@ -329,10 +340,10 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                   for m=1:no_of_v_robots
                       if (robot(i).vheading(m) > pi || robot(i).vheading(m) < -pi)
                           robot(i).no_update = 1;
-                          sprintf(' DEBUG hms02162018 no_update robot(%d) virtual robot %d ', i, m)
-                          sprintf(' DEBUG hms02162018 virtual heading %f', robot(i).vheading(m))
-                          sprintf(' DEBUG hms09252018 virtual noise %f', robot(i).vnoise(m))
-                          sprintf(' DEBUG hms09252018 actual heading %f', robot(i).heading)
+%                           sprintf(' DEBUG hms02162018 no_update robot(%d) virtual robot %d ', i, m)
+%                           sprintf(' DEBUG hms02162018 virtual heading %f', robot(i).vheading(m))
+%                           sprintf(' DEBUG hms09252018 virtual noise %f', robot(i).vnoise(m))
+%                           sprintf(' DEBUG hms09252018 actual heading %f', robot(i).heading)
                       end
                   end
                   %robot(i).noise = normrnd(0,robot(i).sigma);
@@ -341,17 +352,17 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                   robot(i).heading = robot(i).heading + robot(i).noise;
                   if(robot(i).heading > pi)
                     robot(i).heading = pi;
-                    sprintf(' Robot %d has saturated at pi ', i)
+                   % sprintf(' Robot %d has saturated at pi ', i)
                     robot(i).no_update = 1;
                   end
                   if(robot(i).heading < -pi)
                     robot(i).heading = -pi;
-                    sprintf(' Robot %d has saturated at -pi ', i)
+                    %sprintf(' Robot %d has saturated at -pi ', i)
                     robot(i).no_update = 1;
                   end
                   if(robot(i).type == 2)
-                     sprintf(' The robot heading is, %f', robot(i).heading)
-                     sprintf(' The noise is for robot(%d), %f', i, robot(i).noise)
+                     %sprintf(' The robot heading is, %f', robot(i).heading)
+                    % sprintf(' The noise is for robot(%d), %f', i, robot(i).noise)
                   end
               end
               if (robot(i).type == 2) % evader learning
@@ -397,7 +408,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                    %
                    for m1 = 1:no_of_v_robots
                        if (v_condition(m1) ~= robot(i).capture(k).condition || v_condition(m1) ~= condition)
-                           sprintf(' The pursuer %d and evader %d, the count is %d and the epoch is %d, the v_condition is not the same ', i, k, count, j)
+                           %sprintf(' The pursuer %d and evader %d, the count is %d and the epoch is %d, the v_condition is not the same ', i, k, count, j)
                            robot(i).no_update = 1;
                            robot(i).capture(k).no_update = 1;
                            no_update = 1;
@@ -407,7 +418,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                        v_condition_final = max(v_condition);
                    end
                    if(v_condition_final == -1)
-                       sprintf(' The pursuer %d,  evader %d, the count is %d and the epoch is %d v_condition_final = -1 ', i, k, count, j)
+                      % sprintf(' The pursuer %d,  evader %d, the count is %d and the epoch is %d v_condition_final = -1 ', i, k, count, j)
                        no_update = 1;
                        robot(i).no_update = 1;
                    end
@@ -479,9 +490,9 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                        robot(i).capture(k).current_reward = robot(i).capture(k).reward_rel_vel;
                        robot(i).capture(k).current_reward_virtual = v_reward_no_capture_max;
                        robot(i).capture(k).current_reward_max_no_cap = max([v_reward_no_capture_max, robot(i).capture(k).reward_rel_vel]);
-                       if(robot(i).capture(k).current_reward_max_no_cap > -0.4)
-                          sprintf(' The no_cap reward is bigger than -0.4, %d ', robot(i).capture(k).current_reward_max_no_cap)
-                       end
+%                        if(robot(i).capture(k).current_reward_max_no_cap > -0.4)
+%                           sprintf(' The no_cap reward is bigger than -0.4, %d ', robot(i).capture(k).current_reward_max_no_cap)
+%                        end
                    end
                    %
                    %  Compute reward for capture
@@ -506,6 +517,8 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                        if (robot(i).capture(k).rules_fired(j1).rules_fired == robot(i).capture(k).current_rules_fired)
                            if(robot(i).capture(k).condition == 1 && robot(i).no_update == 0 && robot(i).capture(k).rules_fired(j1).condition == 1)
                               if(robot(i).capture(k).current_reward_max_cap > robot(i).capture(k).rules_fired(j1).reward_max_cap)
+                                reward_max_capture = robot(i).capture(k).rules_fired(j1).reward_max_cap;
+                                current_reward_max_cap = robot(i).capture(k).current_reward_max_cap;
                                 robot(i).capture(k).rules_fired(j1).reward_max_cap_old = robot(i).capture(k).rules_fired(j1).reward_max_cap;
                                 robot(i).capture(k).rules_fired(j1).reward_max_cap = robot(i).capture(k).current_reward_max_cap;
                                 robot(i).capture(k).rules_fired(j1).condition = robot(i).capture(k).condition;
@@ -519,9 +532,9 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                               if(robot(i).capture(k).current_reward_max_no_cap > robot(i).capture(k).rules_fired(j1).reward_max_no_cap)
                                 robot(i).capture(k).rules_fired(j1).reward_max_no_cap_old = robot(i).capture(k).rules_fired(j1).reward_max_no_cap;
                                 robot(i).capture(k).rules_fired(j1).reward_max_no_cap = robot(i).capture(k).current_reward_max_no_cap;
-                                if(robot(i).capture(k).current_reward_max_no_cap > -0.39)
-                                    sprintf(' The no_cap reward is bigger than -0.39, %d ', robot(i).capture(k).current_reward_max_no_cap)
-                                end
+%                                 if(robot(i).capture(k).current_reward_max_no_cap > -0.39)
+%                                     sprintf(' The no_cap reward is bigger than -0.39, %d ', robot(i).capture(k).current_reward_max_no_cap)
+%                                 end
                                 robot(i).capture(k).rules_fired(j1).condition = robot(i).capture(k).condition;
                                 if(robot(i).capture(k).rules_fired(j1).condition ~= robot(i).capture(k).rules_fired(j1).condition_old)
                                     sprintf(' The rule condition changed for pursuer %d and evader %d, the count is %d and the epoch is %d ', i, k, count, j)
@@ -538,30 +551,47 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
           % Compute the update for the pursuers
           %
           for i=1:no_of_robots
-             if(robot(i).no_update == 1)
-                sprintf(' No update for pursuer %d, the count is %d and the epoch is %d ', i, count, j) 
-             end
+%              if(robot(i).no_update == 1)
+%                 sprintf(' No update for pursuer %d, the count is %d and the epoch is %d ', i, count, j) 
+%              end
              if (robot(i).no_update == 0)
              for k=1:no_of_robots
                 if (robot(i).type == 1 && robot(k).type == 2)
                     inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y, robot(k).heading];
-                    [value, phi_norm, not_zero_phi, not_zero_count, rules_fired] = compute_robot_state_value(robot(i).capture(k), inputs, robot(i).critic.input );
-                   % robot(i).capture(k).phi_norm_critic = phi_norm;
-                   % robot(i).capture(k).phi_norm_actor = phi_norm;
-                    robot(i).capture(k).value_old = robot(i).capture(k).value;
+                    %[value, phi_norm, not_zero_phi, not_zero_count, rules_fired] = compute_robot_state_value(robot(i).capture(k), inputs, robot(i).critic.input );
+                    [phi_norm, not_zero_phi, rule_fire_count, rules_fired] = compute_rules_fired_set(robot(i).capture(k), inputs, robot(i).critic.input);
+                    %[robot(i).capture(k), rule_set_number, rule_found] = search_for_rule_set(robot(i).capture(k), rules_fired);
+                    [rule_set_number_new, number, condition_old, rule_found] = search_for_rule_set(robot(i).capture(k), rules_fired);
+                    %[value] = compute_robot_state_valuev8(robot(i).capture(k), phi_norm, rule_fire_count, rules_fired);
+                    if (rule_found == 1)
+                    [value] = compute_robot_state_valuev81(robot(i).capture(k), rule_fire_count, rule_set_number_new);
+                    % robot(i).capture(k).phi_norm_critic = phi_norm;
+                    % robot(i).capture(k).phi_norm_actor = phi_norm;
+                    %robot(i).capture(k).value_old = robot(i).capture(k).value;
                     robot(i).capture(k).value = value;
                     %
                     % Do not update if the capture condition changed to
                     % fail
                     %
-                    if (j == 500)
-                        sprintf(' This is the 500th epoch')
-                    end
+%                     if (j == 500)
+%                         sprintf(' This is the 500th epoch')
+%                     end
                     if (robot(i).capture(k).condition_change_to_fail == 0 && rule_capture_condition_change == 0)
-                       [robot(i).capture(k)] = compute_critic_updatev6(robot(i).capture(k));
+                      % [robot(i).capture(k)] = compute_critic_updatev6(robot(i).capture(k));
+                       [robot(i).capture(k), set_rule_flag, rule_count] = compute_critic_updatev8(robot(i).capture(k), i, k);
+%                        if (set_rule_flag == 1 && i == 4 && k == 1)
+%                            if(td_count == 12300)
+%                                sprintf(' This is the td_count 12300')
+%                            end
+%                            td_plot(td_count) = robot(i).capture(k).rules_fired(rule_count).td;
+%                            no_capture_psi1(td_count) =  robot(i).capture(k).rules_fired(rule_count).psi_parameters_no_capture(1);
+%                            phi1_plot(td_count) = robot(i).capture(k).phi_norm_critic(32);
+%                            td_count = td_count + 1;
+%                        end
                        %[robot(i).capture(k)] = compute_actor_updatev6(robot(i).capture(k),robot(i).noise);
 					   %[robot(i).capture(k)] = v_compute_critic_updatev7(robot(i).capture(k), robot(i).no_update, no_of_v_robots);
 					   [robot(i).capture(k)] = v_compute_actor_updatev8(robot(i).capture(k),robot(i).vnoise, robot(i).no_update, no_of_v_robots);
+                    end
                     end
                 end
              end
@@ -630,13 +660,14 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                     dist = sqrt((robot(i).rel_pos(k).x)^2 + (robot(i).rel_pos(k).y)^2);
                     if(dist < 0.5) % We have successfully captured.
                        sprintf(' Pursuer %d has captured the evader. The distance is %f and count is %d and the epoch is %d', i, dist, count, j)
-                       if (j > 400)
+                       if (j > 300)
                           game_on = 0; %Captured
-                          if( j > 900)
-                          if (i == 4 || i == 3 || i == 2)
-                             fileName = sprintf('Epoch_%d.jpg', j); % define the file name
-                              saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
-                          end
+                          if( j > 1400)
+                             if (i == 4)
+                                fileName = sprintf('Epoch_%d.jpg', j); % define the file name
+                                saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
+                                movie_stop = 1;
+                             end
                           end
                        end
                        [capture, psi, w, alpha, beta, sigma] = robot_captured(robot(i).capture(k), count);
@@ -672,8 +703,8 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
              % uncomment this line to get real time visualization of the
              % players trajectory. (Warning: May slow down your system.)
              % pause(0.0000001);
-             if (j == 900)
-                count2 = count2+1;
+             if (j > 450 && movie_stop == 0)
+                count2 = count2 + 1;
                 movie_frame(count2) = getframe;
              end
           end
@@ -707,7 +738,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
     %
     % Save the game plots in the new folder
     % *******************************************************************
-    if  mod(j,100) == 0
+    if  mod(j,50) == 0
       fileName = sprintf('Epoch_%d.jpg', j); % define the file name
       saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
     end 

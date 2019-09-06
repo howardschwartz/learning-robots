@@ -49,8 +49,10 @@ function [robot] = v_compute_actor_updatev8(robot, noise, no_update, no_of_v_rob
    % *********************************************************************
    
     if (robot.condition == 1 && go_to_update == 1)% If it can capture
-        reward = robot.v_reward_capture_heading;
-        reward_no_noise =robot.reward_capture_heading;
+%         reward = robot.v_reward_capture_heading;
+%         reward_no_noise = robot.reward_capture_heading;
+        reward = robot.v_reward_rel_vel;
+        reward_no_noise = robot.reward_rel_vel;
         gamma = robot.gamma_capture_heading;
         td_no_noise = (reward_no_noise  + gamma*value) - value_old;
         w  = robot.w;

@@ -7,14 +7,12 @@ function wl = fire_strength_for_rule(input, rule, input_range)
    [n,m] = size(input); % m is the number of inputs
    [l,n3] = size(rule); % l is the number of membership functions in the rule.
 %
-  % if (l ~= m || n3 ~= 3)
-   %    print('invalid parameters')
-   %    return
-  % end
-%
    wlrule = zeros(1, m);
    for i=1:m
        wlrule(i) = memgradetriangle(input(i), rule(i, :), input_range(i));
+       if (wlrule(i) == 0)
+           break
+       end
    end
 % use the product rule
    wl_prod = prod(wlrule);
