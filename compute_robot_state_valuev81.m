@@ -19,10 +19,10 @@ function [value] = compute_robot_state_valuev81(robot, rule_fire_count, rule_set
     if(sum_phi_norm > 1.001 || sum_phi_norm < 0.99)
         sprintf(' The phi_norm is wrong not equal to 1 ')
     end
-    if(rules_fired == [32, 33, 39, 40, 53, 54, 60, 61, 0, 0])
-       % sprintf(' The rule has fired in compute_critic_update');
-        set_rule_flag = 1;
-    end
+%     if(rules_fired == [32, 33, 39, 40, 53, 54, 60, 61, 0, 0])
+%        % sprintf(' The rule has fired in compute_critic_update');
+%         set_rule_flag = 1;
+%     end
 %     if(number == 10639)
 %         sprintf('This is number 10639')
 %     end

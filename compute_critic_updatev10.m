@@ -1,4 +1,4 @@
-function [robot, set_rule_flag, count31, reward] = compute_critic_updatev8(robot, i, k)
+function [robot, set_rule_flag, count31] = compute_critic_updatev10(robot, i, k)
 % [robot] = compute_critic_update( robot )
 %   Compute the update to the critic parameters
     set_rule_flag = 0;
@@ -7,15 +7,16 @@ function [robot, set_rule_flag, count31, reward] = compute_critic_updatev8(robot
     rule_set_number = robot.rule_set_number;
     no_of_rules = robot.no_of_rules_critic;
     rule_fire_count = robot.rule_fire_count;
-%     if(rules_fired == [32, 33, 39, 40, 53, 54, 60, 61, 0, 0])
-%         if(i == 4 && k == 1)
-%            sprintf(' The rule has fired in compute_critic_update');
-%            set_rule_flag = 1;
-%         end
-%     end
+    if(rules_fired == [32, 33, 39, 40, 53, 54, 60, 61, 0, 0])
+        if(i == 4 && k == 1)
+           sprintf(' The rule has fired in compute_critic_update');
+           set_rule_flag = 1;
+        end
+    end
 %
     if (robot.condition == 1)% If it can capture
-        reward = robot.reward_capture_heading;
+        %reward = robot.reward_capture_heading;
+        reward = robot.reward_rel_vel;
         gamma = robot.gamma_capture_heading;
     end
      if (robot.condition == 0)% If it cannot capture
@@ -33,8 +34,8 @@ function [robot, set_rule_flag, count31, reward] = compute_critic_updatev8(robot
     end
     phi_norm =robot.phi_norm_critic;
     phi_norm1 = robot.rules_fired(rule_set_number).phi_norm;
-    for i=1:rule_fire_count
-       i1 = rules_fired(i);
+    for j=1:rule_fire_count
+       i1 = rules_fired(j);
        if (phi_norm1(i1) ~= phi_norm(i1))
           sprintf(' The phi_norm is wrong ')
        end
@@ -67,9 +68,9 @@ function [robot, set_rule_flag, count31, reward] = compute_critic_updatev8(robot
                    go_to_update = 1;
                 end
                  number_of_times_fired = robot.rules_fired(count31).number;
-%                  if (number_of_times_fired == 10639 && set_rule_flag == 1 && i == 4 && k == 1)
-%                       sprintf(' The rule has fired in compute_critic_update 10639') 
-%                   end
+                 if (number_of_times_fired == 10639 && set_rule_flag == 1 && i == 4 && k == 1)
+                      sprintf(' The rule has fired in compute_critic_update 10639') 
+                  end
 %                  if(rules_fired == [4, 5, 11, 12, 25, 26, 32, 33, 0, 0])
 %                      if (number_of_times_fired > 5000)
 %                      sprintf(' The rule has fired in compute_critic_update rule 12') 
@@ -80,12 +81,12 @@ function [robot, set_rule_flag, count31, reward] = compute_critic_updatev8(robot
                  td_sigma = robot.rules_fired(count31).td_sigma;
                  if( go_to_update == 1)
                  if(reward_max > -100)
-                    % td = (reward_max + gamma*value) - value_old;
+                     %td = (reward_max + gamma*value) - value_old;
                      td = (reward + gamma*value) - value_old;
                      td_change = abs(td_old) - abs(td);
-%                      if(td_change < -0.2 && number_of_times_fired > 200 && set_rule_flag == 1)
-%                          sprintf(' The value of td_change is %f ', td_change) 
-%                      end
+                     if(td_change < -0.2 && number_of_times_fired > 10000 && set_rule_flag == 1)
+                         sprintf(' The value of td_change is %f ', td_change) 
+                     end
                      robot.rules_fired(count31).td = td;
                      % Compute td average.
                      td_avg_new = td_avg + (td - td_avg)/number_of_times_fired;

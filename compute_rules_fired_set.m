@@ -6,7 +6,7 @@ function [phi_norm, not_zero_phi, rule_fire_count, rules_fired] = compute_rules_
     rule = robot.rule_critic;
     phi = zeros(1, no_of_rules);
     not_zero_count = 0;
-    rules_fired = zeros(1,10);
+    rules_fired = zeros(1,128);
     rule_fire_count = 0;
     if (robot.condition == 1)
       not_zero_phi = robot.capture_not_zero_phi;

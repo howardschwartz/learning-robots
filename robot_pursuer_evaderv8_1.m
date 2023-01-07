@@ -1,14 +1,14 @@
-function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
+function [robot, no_of_robots, step_outx, step_outy, count, movie_frame] = robot_pursuer_evaderv8_1()
    % Simulation of the multi-Robot pursuer evader machine learning game
    % Started by Prof. Schwartz Oct. 30, 2016. Adding in the virtual robots.
    %
    % Read in the robot data
    %
    %fid = fopen('robot.txt');
-   fid = fopen('robotv2.txt');
-   no_of_data = [25, inf];
-%    fid = fopen('robot11v2.txt');
-%    no_of_data = [67, inf];
+    fid = fopen('robotv2.txt'); % 3 inputs and 2 membership functions
+    no_of_data = [25, inf];
+   %fid = fopen('robot7v3.txt'); % 7 inputs and 2 membership function
+   %no_of_data = [49, inf];
    robot_data = fscanf(fid, '%f', no_of_data);
    robot_data = robot_data';
    [m, n] = size(robot_data);
@@ -93,7 +93,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
    y = zeros(1, no_of_robots);
    speed = zeros(1, no_of_robots);
    count3 = 0;
-   game_no = 1000;
+   game_no = 600;
    movie_stop = 0;
    count_max = 150;
    td_count = 1;
@@ -109,6 +109,9 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
            robot(i).capture(k).condition = condition; %can pursuer i capture evader k?
            robot(i).capture(k).des_heading = up_des;
            robot(i).capture(k).del_heading = delup;
+           robot(i).capture(k).option(1).true = 0;
+           robot(i).capture(k).option(1).times = 0; % Number of times this option has been executed
+           robot(i).capture(k).option(1).execute = 0; % should this option be executed?
        end
    end
   %
@@ -129,6 +132,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
       robot(i).x =  robot_init(i).x;
       robot(i).y =  robot_init(i).y;
       robot(i).speed =  robot_init(i).speed; % Start from not moving
+      robot(i).total_reward = 0;
       %robot(i).heading = robot_init(i).heading;   % start with zero heading
       %Start here to init capture conditions psi_init and w_init
       for k=1:no_of_robots
@@ -138,6 +142,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                %robot(i).capture(k).w_init = robot(i).w;
                robot(i).capture(k).w_init = robot(i).capture(k).w;
                robot(i).capture(k).condition_change_to_fail = 0;
+               robot(i).capture(k).rule_set_number = 0;
            end
       end   
     end
@@ -151,6 +156,9 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
              robot(i).capture(k).condition = condition;
              robot(i).capture(k).des_heading = up_des;
              robot(i).capture(k).del_heading = delup;
+             if (robot(i).capture(k).option(1).true == 2)
+                  robot(i).capture(k).option(1).true = 1;
+              end
           end
         end
     end
@@ -202,12 +210,12 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                 if (robot(i).type == 1 && robot(k).type == 2)
                     robot(i).capture(k).condition_change_to_fail = 0;
                     inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y, robot(k).heading];
-                    %inputs = [robot(1).rel_pos(k).x, robot(1).rel_pos(k).y, robot(1).heading, robot(2).rel_pos(k).x, robot(2).rel_pos(k).y, robot(2).heading, robot(3).rel_pos(k).x, robot(3).rel_pos(k).y, robot(3).heading, robot(k).heading];
-                    if(inputs(1) > 10 || inputs(1) < -10 || inputs(2) > 10 || inputs(2) < -10 || inputs(3) > pi || inputs(3) < - pi)
-                         %sprintf(' The input is out of range, the pursuer is %d ', i)
-                         %inputs
-                         robot(i).no_update = 1;
-                    end
+                   % inputs = [robot(2).rel_pos(k).x, robot(2).rel_pos(k).y, robot(3).rel_pos(k).x, robot(3).rel_pos(k).y, robot(4).rel_pos(k).x, robot(4).rel_pos(k).y, robot(1).heading];
+%                     if(inputs(1) > 10 || inputs(1) < -10 || inputs(2) > 10 || inputs(2) < -10 || inputs(3) > pi || inputs(3) < - pi)
+%                          %sprintf(' The input is out of range, the pursuer is %d ', i)
+%                          %inputs
+%                          robot(i).no_update = 1;
+%                     end
                     %[value, phi_norm, not_zero_phi, rule_fire_count, rules_fired] = compute_robot_state_value(robot(i).capture(k), inputs, robot(i).critic.input);
                     %[phi_norm, not_zero_phi, rule_fire_count, rules_fired] = compute_rules_fired_set(robot(i).capture(k), inputs, robot(i).critic.input);
                     [phi_norm, not_zero_phi, rule_fire_count, rules_fired] = compute_rules_fired_setv81(robot(i).capture(k), inputs, robot(i).critic.input, max_rules_fired);
@@ -244,13 +252,16 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                           robot(i).capture(k).rules_fired(count3).td_avg_actor = 0;
                           robot(i).capture(k).rules_fired(count3).td_sigma_actor = 0;
                           robot(i).capture(k).rules_fired(count3).td_converged = 0;
-                          robot(i).capture(k).rules_fired(count3).parameters_capture = zeros(1, 10);
-                          robot(i).capture(k).rules_fired(count3).parameters_no_capture = zeros(1, 10);
-                          robot(i).capture(k).rules_fired(count3).psi_parameters_capture = zeros(1, 10);
-                          robot(i).capture(k).rules_fired(count3).psi_parameters_no_capture = zeros(1, 10);
+                          robot(i).capture(k).rules_fired(count3).parameters_capture = zeros(1, max_rules_fired);
+                          robot(i).capture(k).rules_fired(count3).parameters_no_capture = zeros(1, max_rules_fired);
+                          robot(i).capture(k).rules_fired(count3).psi_parameters_capture = zeros(1, max_rules_fired);
+                          robot(i).capture(k).rules_fired(count3).psi_parameters_no_capture = zeros(1, max_rules_fired);
                           robot(i).capture(k).rules_fired(count3).zed = 0;
                           rule_set_number = count3;
                           robot(i).capture(k).number_of_rules_fired = count3;
+                    end
+                    if (count == 1)
+                        robot(i).capture(k).rule_set_init = rules_fired;
                     end
                     %[value] = compute_robot_state_valuev8(robot(i).capture(k), phi_norm, rule_fire_count, rules_fired);
                     [value] = compute_robot_state_valuev81(robot(i).capture(k), rule_fire_count, rule_set_number);
@@ -263,8 +274,15 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                     [robot(i).capture(k), action] = compute_robot_actionv8(robot(i).capture(k), rule_fire_count, rule_set_number);
                     robot(i).capture(k).heading = action;
                     robot(i).capture(k).rule_set_number = rule_set_number;
+                    robot(i).capture(k).rules_fired(rule_set_number).action = action;
                     robot(i).heading = action;
-                     %
+                    %
+                    % Let's enter the step information to recall if we
+                    % capture
+                    robot(i).step(count).heading = action;
+                    robot(i).step(count).x = robot(i).x;
+                    robot(i).step(count).y = robot(i).y;
+                    %
                     for m = 1:no_of_v_robots
                        robot(i).capture(k).virtual(m).phi_norm_critic = phi_norm;
                        robot(i).capture(k).virtual(m).phi_norm_actor = phi_norm;
@@ -293,6 +311,23 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
              % robot(evader).heading = los(nearest, evader);
               robot(evader).des_heading = los(nearest, evader);
               robot(evader).target.des_heading = robot(evader).des_heading;
+              if (robot(nearest).capture(1).option(1).true == 1)
+                  robot(nearest).capture(1).option(1).true = 2;
+                  robot(i).capture(k).option(1).times = robot(i).capture(k).option(1).times + 1;
+                  if (robot(i).capture(k).option(1).times == 100)
+                      robot(i).capture(k).option(1).execute = 1;
+                  end
+                  robot_total_reward = robot(nearest).total_reward/count;
+                  option_total_reward = robot(nearest).capture(1).option(1).total_reward
+                  if (robot_total_reward > option_total_reward)
+                      robot(nearest).capture(1).option(1).step = robot(nearest).step;
+                      robot(nearest).capture(1).option(1).count = count;
+                      robot(nearest).capture(1).option(1).rule_set_init = robot(nearest).capture(k).rule_set_init;
+                      robot(nearest).capture(1).option(1).total_reward = robot(nearest).total_reward/count;
+                      sprintf(' The option total reward is, %f', robot(nearest).total_reward)
+                  end
+              end
+             % robot(nearest).capture(1).option(1).total_reward = robot(nearest).total_reward/count;
               sprintf(' Run away from nearest %d robot at dist_min %f', nearest, dist_min)
               sprintf(' The target desired heading is, %f', robot(evader).target.des_heading)
               if (nearest == 4)
@@ -329,6 +364,9 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                 robot(i).target.phi_norm_critic = phi_norm;
                 robot(i).target.phi_norm_actor = phi_norm;
               end
+              robot(i).step(count).heading = robot(i).heading;
+              robot(i).step(count).x = robot(i).x;
+              robot(i).step(count).y = robot(i).y;
           end
           %
           % Compute the exploration noise for each robot
@@ -567,7 +605,8 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
              for k=1:no_of_robots
                 if (robot(i).type == 1 && robot(k).type == 2)
                     inputs = [robot(i).rel_pos(k).x, robot(i).rel_pos(k).y, robot(k).heading];
-                    %inputs = [robot(1).rel_pos(k).x, robot(1).rel_pos(k).y, robot(1).heading, robot(2).rel_pos(k).x, robot(2).rel_pos(k).y, robot(2).heading, robot(3).rel_pos(k).x, robot(3).rel_pos(k).y, robot(3).heading, robot(k).heading];
+                   % inputs = [robot(2).rel_pos(k).x, robot(2).rel_pos(k).y, robot(3).rel_pos(k).x, robot(3).rel_pos(k).y, robot(4).rel_pos(k).x, robot(4).rel_pos(k).y, robot(1).heading];
+                    %v_inputs = [robot(2).rel_pos(k).virtualx(1), robot(2).rel_pos(k).virtualy(1), robot(3).rel_pos(k).virtualx(1), robot(3).rel_pos(k).virtualy(1), robot(4).rel_pos(k).virtualx(1), robot(4).rel_pos(k).virtualy(1), robot(1).vheading];
                     v_inputs = [robot(i).rel_pos(k).virtualx(1), robot(i).rel_pos(k).virtualy(1), robot(k).vheading];
                     %[value, phi_norm, not_zero_phi, not_zero_count, rules_fired] = compute_robot_state_value(robot(i).capture(k), inputs, robot(i).critic.input );
                     %[phi_norm, not_zero_phi, rule_fire_count, rules_fired] = compute_rules_fired_set(robot(i).capture(k), inputs, robot(i).critic.input);
@@ -598,7 +637,8 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
 %                     end
                     if (robot(i).capture(k).condition_change_to_fail == 0 && rule_capture_condition_change == 0)
                       % [robot(i).capture(k)] = compute_critic_updatev6(robot(i).capture(k));
-                       [robot(i).capture(k), set_rule_flag, rule_count] = compute_critic_updatev8(robot(i).capture(k), i, k);
+                       [robot(i).capture(k), set_rule_flag, rule_count, reward] = compute_critic_updatev8(robot(i).capture(k), i, k);
+                       robot(i).total_reward = robot(i).total_reward + reward;
 %                        if (set_rule_flag == 1 && i == 4 && k == 1)
 %                            if(td_count == 12300)
 %                                sprintf(' This is the td_count 12300')
@@ -680,9 +720,9 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                     dist = sqrt((robot(i).rel_pos(k).x)^2 + (robot(i).rel_pos(k).y)^2);
                     if(dist < 0.5) % We have successfully captured.
                        sprintf(' Pursuer %d has captured the evader. The distance is %f and count is %d and the epoch is %d', i, dist, count, j)
-                       if (j > 400)
+                       if (j > 500)
                           game_on = 0; %Captured
-                          if( j > 950)
+                          if( j > 500)
                              if (i == 4)
                                 fileName = sprintf('Epoch_%d.jpg', j); % define the file name
                                 saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
@@ -698,6 +738,25 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
                        robot(i).capture(k).alpha = alpha;
                        robot(i).capture(k).beta = beta;
                        robot(i).capture(k).sigma = sigma;
+                        if (robot(i).capture(k).option(1).true == 1)
+                           robot_total_reward = robot(i).total_reward/count;
+                           option_total_reward = robot(i).capture(k).option(1).total_reward
+                            if (robot_total_reward > option_total_reward)
+                                robot(i).capture(k).option(1).step = robot(i).step;
+                                robot(i).capture(k).option(1).count = count;
+                                robot(i).capture(k).option(1).rule_set_init = robot(i).capture(k).rule_set_init;
+                                robot(i).capture(k).option(1).total_reward = robot(i).total_reward/count;
+                                sprintf(' The option total reward is, %f', robot(i).total_reward)
+                            end
+                       end
+                       if (robot(i).capture(k).option(1).true == 0)
+                          robot(i).capture(k).option(1).true = 1;
+                          robot(i).capture(k).option(1).step = robot(i).step;
+                          robot(i).capture(k).option(1).count = count;
+                          robot(i).capture(k).option(1).rule_set_init = robot(i).capture(k).rule_set_init;
+                          robot(i).capture(k).option(1).total_reward = robot(i).total_reward/count;
+                          sprintf(' The option total reward is, %f', robot(i).total_reward)
+                       end
                        robot(i).psi = psi;
                        robot(i).w = w;
                        robot(i).alpha = alpha;
@@ -723,7 +782,7 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
              % uncomment this line to get real time visualization of the
              % players trajectory. (Warning: May slow down your system.)
              % pause(0.0000001);
-             if (j > 950 && movie_stop == 0)
+             if (j > 500 && movie_stop == 0)
                 count2 = count2 + 1;
                 movie_frame(count2) = getframe;
              end
@@ -761,9 +820,22 @@ function [robot, no_of_robots, movie_frame] = robot_pursuer_evaderv8()
     if  mod(j,100) == 0
       fileName = sprintf('Epoch_%d.jpg', j); % define the file name
       saveas( gamePlot, [ pwd strcat('/', folderName, '/', fileName, '.png') ]  );  % save the file
-    end 
+    end
+    if (mod(j, 200) == 0)
+        for i=1:no_of_robots
+             for k=1:no_of_robots
+                 if (robot(i).type == 1 && robot(k).type == 2)
+                     [robot(i).capture(k)] = rule_set_reduction(robot(i).capture(k));
+                 end
+             end
+        end
+    end
   end
-  robot(1).target.w
+  count = robot(3).capture(1).option(1).count;
+  for i=1:count
+     step_outx(i) = robot(3).capture(1).option(1).step(i).x;
+     step_outy(i) = robot(3).capture(1).option(1).step(i).y;
+  end
   for i=1:no_of_robots
      for k=1:no_of_robots
          if (robot(i).type == 1 && robot(k).type == 2)

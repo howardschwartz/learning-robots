@@ -8,6 +8,9 @@ function [rule_set_number, number, condition_old, rule_found] = search_for_rule_
      number = 0;
      condition_old = robot.condition;
      count3 = robot.number_of_rules_fired;
+%      if (count3 == 1) %this is the first rule fired
+%          robot.rules_fired(1).rules_fired = zero(1, ;
+%      end
      if (count3 > 0)
          for count31 = 1:count3
              % Has the current rule set been fired yet?
